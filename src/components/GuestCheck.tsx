@@ -48,7 +48,7 @@ export function GuestCheck({ slug, title, outcomes, prices, b, open, closedNote,
     try {
       const r = await buy.mutateAsync({ outcome: pick, cents: spend });
       sound.bell();
-      sound.say(topping === "stuffed" ? "Stuffed crust! You're crazy!" : "Order up!");
+      void sound.line(topping === "stuffed" ? "stuffed-crust" : "order-up");
       fx.ticket(
         `${fmtShares(r.shares)} × ${outcomes[pick]}`,
         [

@@ -62,7 +62,7 @@ function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
                 try {
                   const r = await open.mutateAsync({ side, boxes });
                   sound.register();
-                  sound.say(side === "long" ? "Load up da van!" : "Fuhgeddaboudit!");
+                  void sound.line(side === "long" ? "van-long" : "van-short");
                   fx.ticket(`${side.toUpperCase()} ${boxes} BX ${row.symbol}`, [["Price", `${r.price}¢`], ["Boxes", String(boxes)]], money(r.cost));
                   onClose();
                 } catch (e) {

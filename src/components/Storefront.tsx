@@ -42,7 +42,7 @@ export function SoundControls() {
           if (!sound.enabled) return;
           setTimeout(() => {
             sound.bell();
-            sound.say("Ayyy! Sound's on!");
+            void sound.line("sound-on");
           }, 30);
         }}
       >
@@ -54,7 +54,7 @@ export function SoundControls() {
         disabled={!sound.enabled}
         onClick={() => {
           sound.setVoice(!sound.voice);
-          if (sound.voice) sound.say("Fuhgeddaboudit.");
+          if (sound.voice) void sound.line("voice-on");
         }}
       >
         Tony's voice
@@ -110,6 +110,7 @@ export function Storefront() {
                   className="btn btn-cheese text-sm"
                   onClick={() => {
                     sound.register();
+                    void sound.line("deposit");
                     fx.page("TONY: WE DON'T TAKE CARDS. OR CASH. IT'S FAKE MONEY, GENIUS.");
                   }}
                 >
@@ -133,7 +134,7 @@ export function Storefront() {
                       onClick={async () => {
                         await api.logout();
                         await qc.invalidateQueries();
-                        sound.say("Ciao!");
+                        void sound.line("ciao");
                         nav("/");
                       }}
                     >

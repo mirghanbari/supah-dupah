@@ -86,7 +86,7 @@ export function Tab() {
             <button
               className="btn btn-cheese"
               onClick={() => {
-                sound.say("Take it to go? It's fake money, pal.");
+                void sound.line("cash-out");
                 fx.page("TAKE IT TO GO? IT'S PLAY MONEY. YOU CAN'T TAKE NOTHIN' NOWHERE.");
               }}
             >
@@ -99,6 +99,7 @@ export function Tab() {
                 onClick={async () => {
                   await bail.mutateAsync(undefined);
                   sound.register();
+                  void sound.line("bailout");
                   fx.stamp("TONY SPOTTED YA", "good", "+$20.00");
                 }}
               >

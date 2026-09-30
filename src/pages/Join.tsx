@@ -30,14 +30,15 @@ export function Join() {
       if (mode === "join") {
         fx.confetti();
         fx.stamp("WELCOME!", "good", "+$100.00");
-        sound.say("Ayyy! Welcome to Supah Dupah! Here's a C-note from Tony.");
+        void sound.line("welcome");
         sound.jingle();
-      } else sound.say("Ayyy! Look who's back!");
+      } else void sound.line("welcome-back");
       nav("/");
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Somethin' went wrong.");
       if (e instanceof ApiError && e.status === 403) {
         sound.trombone();
+        void sound.line("cop");
         fx.stamp("CLOSED", "bad", "(always)");
       } else sound.aww();
     } finally {

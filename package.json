@@ -11,7 +11,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "deploy": "npm run build && wrangler deploy",
     "typecheck": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "voice": "node scripts/tony-voice.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",

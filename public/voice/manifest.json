@@ -1,0 +1,110 @@
+{
+  "sound-on": [
+    false,
+    false
+  ],
+  "voice-on": [
+    false,
+    false
+  ],
+  "ciao": [
+    false,
+    false
+  ],
+  "welcome": [
+    false
+  ],
+  "welcome-back": [
+    false,
+    false
+  ],
+  "order-up": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "stuffed-crust": [
+    false,
+    false
+  ],
+  "deposit": [
+    false
+  ],
+  "cash-out": [
+    false
+  ],
+  "bailout": [
+    false,
+    false
+  ],
+  "cop": [
+    false
+  ],
+  "van-long": [
+    false,
+    false
+  ],
+  "van-short": [
+    false,
+    false
+  ],
+  "bada-bing": [
+    false,
+    false
+  ],
+  "bada-boom": [
+    false,
+    false
+  ],
+  "lost": [
+    false,
+    false
+  ],
+  "tossin-starts": [
+    false,
+    false
+  ],
+  "ceiling": [
+    false,
+    false
+  ],
+  "floor-pie": [
+    false,
+    false
+  ],
+  "over-hits": [
+    false,
+    false
+  ],
+  "under-hits": [
+    false,
+    false
+  ],
+  "ayyy": [
+    false
+  ],
+  "num": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ]
+}

@@ -1,4 +1,6 @@
-// Every sound in the shop is synthesized on the fly with Web Audio. No files.
+import LINES from "../voice/tony-lines.json";
+
+// Every sound effect in the shop is synthesized on the fly with Web Audio. Only Tony's voice is recorded.
 // The mandolin is Karplus-Strong string synthesis; the jukebox plays an original tarantella.
 
 const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
@@ -260,7 +262,7 @@ class SoundEngine {
     if (!r) return;
     this.tone(190, r.t, 0.25, 0.5, "triangle", undefined, 120);
     this.burst(r.t, 0.35, 0.3, "lowpass", 1200, 300);
-    this.say("Hey! Da ceiling!", 1.2);
+    void this.line("ceiling");
   }
 
   sneeze() {
@@ -390,7 +392,7 @@ class SoundEngine {
     this.register();
     setTimeout(() => this.jingle(), 350);
     setTimeout(() => this.ayyy(bigCents > 2000), 200);
-    this.say(bigCents > 2000 ? "Bada bing! Bada boom!" : "Bada bing!", 0.9);
+    void this.line(bigCents > 2000 ? "bada-boom" : "bada-bing");
   }
 
   // ---------- jukebox ----------
@@ -440,13 +442,95 @@ class SoundEngine {
   }
 
   // ---------- Tony's voice ----------
+  // Recorded clips (public/voice, made by `npm run voice`) when we have them,
+  // the browser's text-to-speech when we don't.
 
-  say(text: string, rate = 1) {
-    if (!this.enabled || !this.voice || typeof speechSynthesis === "undefined") return;
+  private manifest: Record<string, boolean[]> | null = null;
+  private manifestLoad: Promise<void> | null = null;
+  private clips = new Map<string, Promise<AudioBuffer | null>>();
+  private talking: AudioBufferSourceNode[] = [];
+
+  private loadManifest() {
+    this.manifestLoad ??= fetch("/voice/manifest.json")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((m) => void (this.manifest = m as Record<string, boolean[]>))
+      .catch(() => void (this.manifest = {}));
+    return this.manifestLoad;
+  }
+
+  private clip(id: string, take: number): Promise<AudioBuffer | null> {
+    const key = `${id}.${take}`;
+    let p = this.clips.get(key);
+    if (!p) {
+      p = fetch(`/voice/${key}.mp3`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then((b) => this.ctx!.decodeAudioData(b))
+        .catch(() => null);
+      this.clips.set(key, p);
+    }
+    return p;
+  }
+
+  /** Pick a take: a specific one (numbers), or a random recorded one. */
+  private pickTake(id: string, take?: number): number | null {
+    const recorded = this.manifest?.[id];
+    if (!recorded) return null;
+    if (take != null) return recorded[take] ? take : null;
+    const have = recorded.map((ok, i) => (ok ? i : -1)).filter((i) => i >= 0);
+    return have.length ? have[Math.floor(Math.random() * have.length)] : null;
+  }
+
+  /**
+   * Tony says a line from src/voice/tony-lines.json. Pass `num` to lead with a number
+   * ("Eleven!" then "The over hits!").
+   */
+  async line(id: keyof typeof LINES, opts: { num?: number } = {}) {
+    if (!this.enabled || !this.voice) return;
+    this.unlock();
+    await this.loadManifest();
+    const parts: [string, number | undefined][] = opts.num != null ? [["num", opts.num], [id, undefined]] : [[id, undefined]];
+    const takes = parts.map(([pid, t]) => this.pickTake(pid, t));
+    const buffers = await Promise.all(parts.map(([pid], i) => (takes[i] == null || !this.ctx ? null : this.clip(pid, takes[i]!))));
+    const r = this.ready();
+    if (r && buffers.every(Boolean)) {
+      for (const s of this.talking) s.stop();
+      this.talking = [];
+      let t = r.t;
+      for (const b of buffers as AudioBuffer[]) {
+        const src = r.ctx.createBufferSource();
+        src.buffer = b;
+        src.connect(r.out);
+        src.start(t);
+        this.talking.push(src);
+        t += b.duration + 0.05;
+      }
+      this.duck(r.t, t);
+      return;
+    }
+    // no recording yet: read it out with the browser voice
+    const text = parts
+      .map(([pid, t]) => {
+        const all = LINES[pid as keyof typeof LINES] as string[];
+        return t != null ? all[t] ?? String(t) : all[Math.floor(Math.random() * all.length)];
+      })
+      .join(" ");
+    this.speakFallback(text);
+  }
+
+  /** Lower the jukebox while Tony talks. */
+  private duck(from: number, to: number) {
+    const g = this.musicBus?.gain;
+    if (!g || !this.jukebox) return;
+    g.cancelScheduledValues(from);
+    g.setTargetAtTime(0.12, from, 0.05);
+    g.setTargetAtTime(0.35, to, 0.2);
+  }
+
+  private speakFallback(text: string) {
+    if (typeof speechSynthesis === "undefined") return;
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.pitch = 0.6;
-      u.rate = rate;
       u.volume = 0.9;
       const v = speechSynthesis.getVoices().find((x) => /en[-_]US/i.test(x.lang) && /male|fred|daniel|alex/i.test(x.name));
       if (v) u.voice = v;

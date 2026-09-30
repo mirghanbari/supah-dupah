@@ -109,6 +109,7 @@ function useLedgerWatcher() {
         for (const w of wins.slice(0, 3)) fx.page(`YOU WON ${money(w.cents)} · ${w.memo.replace(/^WON /, "")}`, "good");
       } else if (losses.length) {
         sound.aww();
+        setTimeout(() => void sound.line("lost"), 900);
       }
       for (const l of losses.slice(0, 3)) fx.page(`${l.memo} · ${money(-l.cents)} DOWN DA DRAIN`, "bad");
       if (entries.some((e) => e.kind === "bailout")) fx.page("TONY SPOTTED YOU A TWENTY. DON'T TELL NOBODY.", "good");
@@ -138,6 +139,7 @@ export function Effects() {
   useAyyy(() => {
     setChef((c) => c + 1);
     sound.ayyy(true);
+    setTimeout(() => void sound.line("ayyy"), 300);
   });
 
   useEffect(() => {

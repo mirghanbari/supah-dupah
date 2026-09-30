@@ -10,7 +10,7 @@ A parody prediction market and "fell off da truck" futures exchange, run out of 
 - **Crust Sports:** Pro Dough Toss League standings, built from every live pie.
 - **Your Tab / Wall of Fame:** your receipt and the leaderboard.
 - Regulars (bots) trade and trash-talk so the place never feels empty.
-- Everything you hear is synthesized in the browser: service bell, cash register, crowd "AYYY", sad trombone, a plucked-mandolin tarantella jukebox, and Tony's voice. Type `ayyy` anywhere.
+- Everything you hear is synthesized in the browser: service bell, cash register, crowd "AYYY", sad trombone, a plucked-mandolin tarantella jukebox, and Tony himself (recorded with ElevenLabs, see below). Type `ayyy` anywhere.
 
 ## Stack
 
@@ -35,6 +35,23 @@ npm run dev             # http://localhost:5173
 ```
 
 To get Tony's Office (create and settle markets), sign up and type your `BOSS_CODE` into the "Who sent you?" box. Anyone can register any name; only the code makes you Tony.
+
+## Tony's voice
+
+Tony talks in recorded clips made with ElevenLabs. Until a line has a clip, the browser's built-in voice reads it (robotically).
+
+1. In ElevenLabs, open **Voice Design** and describe him. This works well:
+
+   > A gruff, middle-aged Italian-American man from Brooklyn, New York. Thick New York accent, loud and warm, a little hoarse from yelling orders over the oven all day. Owns a pizzeria. Talks fast, full of swagger, always half-joking.
+
+   Generate, pick the take that sounds most like a guy who'd call you "my guy," and save it. Copy its **voice ID**.
+2. Generate the clips (roughly 60 short lines, a few thousand characters):
+   ```sh
+   ELEVENLABS_API_KEY=your-key TONY_VOICE_ID=the-voice-id npm run voice
+   ```
+3. Reload the app and turn on **Tony's voice**.
+
+Every line lives in `src/voice/tony-lines.json`; each line can have several takes and one is picked at random. After editing, run `npm run voice -- <line-id>` to redo just that line, or `npm run voice -- --force` to redo everything. Clips go in `public/voice/` and ship with the app.
 
 ## Put it on supahdupah.com
 

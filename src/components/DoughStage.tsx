@@ -130,16 +130,16 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
         fx.shake();
         setCall(pickLine(TOSS_CALLS.floor, seed));
         setTimeout(() => puff(490, COUNTER_Y + 20, true), 700);
-        sound.say("Floor pie!", 1.1);
+        void sound.line("floor-pie");
       } else if (ev.kind === "done") {
         const over = ev.count > round.line;
         setCall(pickLine(TOSS_CALLS.done, seed).replace("{n}", String(ev.count)));
         if (over) {
           sound.ayyy(true);
-          sound.say(`${ev.count}! The over hits!`);
+          void sound.line("over-hits", { num: ev.count });
         } else {
           sound.aww();
-          sound.say(`${ev.count}. Under. Fuhgeddaboudit.`);
+          void sound.line("under-hits", { num: ev.count });
         }
         fx.stamp(`${ev.count} TOSSES`, over ? "good" : "bad", over ? `OVER ${round.line}` : `UNDER ${round.line}`);
       }
@@ -156,7 +156,11 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
     if (!betting || secsLeft > 10 || secsLeft < 1 || lastTick.current === secsLeft) return;
     lastTick.current = secsLeft;
     sound.tick(secsLeft <= 3);
-    if (secsLeft === 1) setTimeout(() => sound.bell(), 900);
+    if (secsLeft === 1)
+      setTimeout(() => {
+        sound.bell();
+        void sound.line("tossin-starts");
+      }, 900);
   }, [secsLeft, betting]);
 
   const skin = SKIN[tosser.color] ?? SKIN.blue;
