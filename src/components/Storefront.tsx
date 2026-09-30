@@ -346,6 +346,11 @@ export function Storefront() {
             </NavLink>
           ))}
         </nav>
+        {/* phone: the tagline gets its own neon sign under the logo */}
+        <div className="flex items-center justify-center gap-3 px-4 pb-3 md:hidden">
+          <span className="neon text-center text-[22px] leading-none min-[400px]:text-2xl">If you ain't Supah, you ain't Dupah.</span>
+          <span className="neon-open shrink-0 text-xs">OPEN</span>
+        </div>
         {/* phone: a thin strip naming where you are */}
         <PhoneSectionStrip />
       </div>
