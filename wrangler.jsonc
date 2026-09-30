@@ -3,7 +3,10 @@
   "name": "supah-dupah",
   "main": "worker/index.ts",
   "compatibility_date": "2026-09-01",
-  // "routes": [{ "pattern": "supahdupah.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "supahdupah.com", "custom_domain": true },
+    { "pattern": "www.supahdupah.com", "custom_domain": true }
+  ],
   "assets": {
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
@@ -12,7 +15,7 @@
     {
       "binding": "DB",
       "database_name": "supah-dupah",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "8a77db31-e518-4225-be36-043df5c9f566",
       "migrations_dir": "migrations"
     }
   ],
