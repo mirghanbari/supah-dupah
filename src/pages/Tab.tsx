@@ -18,7 +18,7 @@ export function Tab() {
   const now = new Date();
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[400px_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_minmax(0,1fr)]">
       <motion.div initial={{ y: -40, opacity: 0, clipPath: "inset(0 0 100% 0)" }} animate={{ y: 0, opacity: 1, clipPath: "inset(0 0 0% 0)" }} transition={{ duration: 1.1, ease: "easeOut" }}>
         <div className="receipt mx-auto grid max-w-[400px] gap-0.5 px-5 pb-7 pt-5 text-lg leading-snug text-[#222] shadow-xl">
           <div className="text-center">

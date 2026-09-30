@@ -21,7 +21,7 @@ export function Office() {
   if (!me) return <p className="font-hand text-lg">Only Tony gets in here.</p>;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
       <section className="plate grid gap-3 p-5">
         <h1 className="font-slab text-2xl">Tony's Office</h1>
         <p className="text-sm text-ink-soft">Put a new special on the board.</p>

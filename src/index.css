@@ -407,3 +407,10 @@ label,
     transform: scaleX(1);
   }
 }
+
+/* A grid with no explicit columns gets one implicit "auto" column, which grows to fit its
+   widest child (like a letterboard line) and pushes the page past a phone screen.
+   Make that single column shrinkable instead. */
+.grid:not([class*="grid-cols-"]) {
+  grid-template-columns: minmax(0, 1fr);
+}

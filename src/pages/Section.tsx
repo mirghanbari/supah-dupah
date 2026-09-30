@@ -24,7 +24,7 @@ export function Section() {
     <div className="grid gap-8">
       <section className="grid gap-4">
         <SectionHead title={CATEGORY_LABEL[c]} aside={ASIDE[c]} />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {live.map((m, i) => (
             <MarketCard key={m.slug} m={m} i={i} />
           ))}
@@ -34,7 +34,7 @@ export function Section() {
       {settled.length > 0 && (
         <section className="grid gap-4">
           <SectionHead title="Already Settled" aside="Tony has spoken" />
-          <div className="grid gap-4 opacity-80 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 opacity-80 sm:grid-cols-2 lg:grid-cols-3">
             {settled.map((m, i) => (
               <MarketCard key={m.slug} m={m} i={i} />
             ))}

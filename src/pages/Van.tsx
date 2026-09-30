@@ -23,7 +23,7 @@ function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
 
   return (
     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-      <div className="grid gap-3 border-t-2 border-dashed border-grout bg-tile p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-3 border-t-2 border-dashed border-grout bg-tile p-4 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {(["long", "short"] as const).map((s) => (
@@ -177,7 +177,7 @@ export function Van() {
         {!data && <p className="p-6 font-hand text-ink-soft">Openin' da van…</p>}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Contract size", "1 box (contents may vary)"],
           ["Tick size", "1¢, or one \"you didn't see nothin'\""],
@@ -194,7 +194,7 @@ export function Van() {
       {data && data.mine.length > 0 && (
         <section className="grid gap-3">
           <SectionHead title="Your Boxes" aside="marked to market, every minute" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence>
               {data.mine.map((p) => (
                 <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, x: 120, rotate: 8 }} className="plate grid gap-2 p-4">

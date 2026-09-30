@@ -67,7 +67,7 @@ export function Lobby() {
 
   return (
     <div className="grid gap-8">
-      <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <LiveTossCard />
         {featured.length > 0 ? <Letterboard markets={featured} /> : <div className="letterboard min-h-64" />}
       </div>
@@ -88,7 +88,7 @@ export function Lobby() {
             </button>
           ))}
         </div>
-        <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((m, i) => (
             <MarketCard key={m.slug} m={m} i={i} />
           ))}

@@ -50,7 +50,7 @@ export function Market() {
           {CATEGORY_LABEL[m.category]}
         </Link>
       </div>
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="grid min-w-0 gap-5">
           <header className="plate grid gap-3 p-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -102,7 +102,7 @@ export function Market() {
 
           <section className="plate grid gap-2.5 p-5">
             <h2 className="font-slab text-lg text-sauce">Da Rules</h2>
-            <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[150px_minmax(0,1fr)]">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[150px_minmax(0,1fr)]">
               {m.rules.map(([k, v]) => (
                 <div key={k} className="contents">
                   <dt className="label pt-0.5 text-ink-soft">{k}</dt>
@@ -114,7 +114,7 @@ export function Market() {
             </dl>
           </section>
 
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <section className="plate grid content-start gap-2 p-4">
               <h2 className="font-slab text-lg">Da Line</h2>
               <p className="text-xs text-ink-soft">Who just ordered, and what they got</p>

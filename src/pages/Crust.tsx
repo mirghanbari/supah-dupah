@@ -19,7 +19,7 @@ export function Crust() {
 
   return (
     <div className="grid gap-8">
-      <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <section className="plate grid gap-3 p-5">
           <div>
             <p className="label text-basil">Pro Dough Toss League · Season '96</p>
@@ -108,7 +108,7 @@ export function Crust() {
 
       <section className="grid gap-4">
         <SectionHead title="Events & Prop Bets" aside="resolved by Tony, who was there" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {crust.map((m, i) => (
             <MarketCard key={m.slug} m={m} i={i} />
           ))}
