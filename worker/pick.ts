@@ -1,7 +1,8 @@
 import type { PickResult, PickState } from "../shared/types";
 import { clearGuard, guard, HttpError, isGuardFailure, type Env, type UserRow } from "./env";
 
-export const PICK = { lo: 1, hi: 10, drawHi: 100, multiplier: 100, maxCents: 10_000 };
+// You pick 1-10 and the sign only ever shows 1-10, but only 1 play in `odds` wins.
+export const PICK = { lo: 1, hi: 10, odds: 100, multiplier: 100, maxCents: 10_000 };
 
 /** Uniform 1..n from the platform CSPRNG (rejection sampling, no modulo bias). */
 function draw(n: number): number {
@@ -17,8 +18,10 @@ export async function playPick(env: Env, user: UserRow, pick: number, cents: num
   if (!Number.isInteger(cents) || cents < 1) throw new HttpError(400, "Gotta bet at least a penny.");
   if (cents > PICK.maxCents) throw new HttpError(400, "Max bet's a hundred bucks. Tony ain't made of money. (He is.)");
 
-  const tony = draw(PICK.drawHi);
-  const win = tony === pick;
+  const win = draw(PICK.odds) === 1;
+  // on a loss, Tony "draws" one of the other nine numbers, evenly
+  const other = draw(PICK.hi - PICK.lo);
+  const tony = win ? pick : other >= pick ? other + 1 : other;
   const payout = win ? cents * PICK.multiplier : 0;
   const now = Date.now();
   const memo = win ? `PICK ${pick} · TONY DREW ${tony} · WINNER` : `PICK ${pick} · TONY DREW ${tony}`;

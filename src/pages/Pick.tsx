@@ -97,7 +97,7 @@ export function Pick() {
           return resolve();
         }
         if (now >= next) {
-          setShown(1 + Math.floor(Math.random() * 100));
+          setShown(1 + Math.floor(Math.random() * 10));
           sound.tick(false);
           next = now + 40 + 380 * t * t; // ticks slow down like a wheel losing steam
         }
@@ -160,7 +160,7 @@ export function Pick() {
             Pick a number, 1 to 10. If it matches Tony's number, you get paid <b className="text-ink">100 times</b> your bet.
           </p>
           <p className="mx-auto max-w-[52ch] rotate-[-1deg] font-hand text-xs text-sauce">
-            *Tony picks from 1 to 100. Odds of winning: 1 in 100. It's in the fine print. This is the fine print.
+            *Tony's number is 1 to 10. Your odds of winning are 1 in 100. Don't ask how. It's in the fine print. This is the fine print.
           </p>
         </header>
 
