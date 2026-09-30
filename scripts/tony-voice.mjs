@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Generates Tony's voice clips with ElevenLabs.
 //
-//   ELEVENLABS_API_KEY=... TONY_VOICE_ID=... npm run voice            # only lines that don't have a clip yet
-//   ELEVENLABS_API_KEY=... TONY_VOICE_ID=... npm run voice -- --force  # redo everything
-//   ELEVENLABS_API_KEY=... TONY_VOICE_ID=... npm run voice -- welcome order-up   # redo just these lines
+//   npm run voice                      # only lines that don't have a clip yet
+//   npm run voice -- --force           # redo everything
+//   npm run voice -- welcome order-up  # redo just these lines
+//
+// Reads ELEVENLABS_API_KEY and TONY_VOICE_ID from .env.voice (git-ignored) or the shell.
 //
 // Optional: ELEVEN_MODEL (default eleven_multilingual_v2).
 // Clips land in public/voice/<line>.<take>.mp3 and public/voice/manifest.json lists them.
@@ -16,11 +18,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = join(root, "public", "voice");
 const lines = JSON.parse(readFileSync(join(root, "src", "voice", "tony-lines.json"), "utf8"));
 
+// Settings come from .env.voice (git-ignored) unless they're already set in the shell.
+const envFile = join(root, ".env.voice");
+if (existsSync(envFile)) {
+  for (const raw of readFileSync(envFile, "utf8").split("\n")) {
+    const m = raw.match(/^\s*([A-Z0-9_]+)\s*=\s*"?([^"#]*?)"?\s*(#.*)?$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+}
+
 const key = process.env.ELEVENLABS_API_KEY;
 const voice = process.env.TONY_VOICE_ID;
 const model = process.env.ELEVEN_MODEL ?? "eleven_multilingual_v2";
 if (!key || !voice) {
-  console.error("Set ELEVENLABS_API_KEY and TONY_VOICE_ID first. See README, \"Tony's voice\".");
+  console.error("Put ELEVENLABS_API_KEY and TONY_VOICE_ID in .env.voice (copy .env.voice.example). See README, \"Tony's voice\".");
   process.exit(1);
 }
 
