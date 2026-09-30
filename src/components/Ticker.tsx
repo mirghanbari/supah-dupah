@@ -17,7 +17,7 @@ export function Ticker() {
           {it.text}
         </span>
       ))}
-      <span className="text-plate/60">★ IF YOU AIN'T SUPAH, YOU AIN'T DUPAH ★</span>
+      <span className="text-plate/60">★ IF YOU AIN'T SUPAH, YOU AIN'T DUPAH! ★</span>
     </span>
   );
   return (

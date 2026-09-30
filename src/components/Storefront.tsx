@@ -228,7 +228,7 @@ function MenuDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                   Sign out
                 </button>
               )}
-              <p className="font-neon text-xl text-sauce">If you ain't Supah, you ain't Dupah.</p>
+              <p className="font-neon text-xl text-sauce">If you ain't Supah, you ain't Dupah!</p>
             </div>
           </motion.aside>
         </>
@@ -261,7 +261,7 @@ export function Storefront() {
             <Logo className="w-[150px] shrink-0 min-[400px]:w-[180px] md:w-[270px]" />
             <div className="hidden min-w-0 flex-col gap-2 md:flex">
               <span className="neon text-3xl leading-none">If you ain't Supah,</span>
-              <span className="neon text-3xl leading-none">you ain't Dupah.</span>
+              <span className="neon text-3xl leading-none">you ain't Dupah!</span>
               <span className="neon-open self-start text-sm">OPEN</span>
             </div>
           </Link>
@@ -348,7 +348,7 @@ export function Storefront() {
         </nav>
         {/* phone: the tagline gets its own neon sign under the logo */}
         <div className="flex items-center justify-center gap-3 px-4 pb-3 md:hidden">
-          <span className="neon text-center text-[22px] leading-none min-[400px]:text-2xl">If you ain't Supah, you ain't Dupah.</span>
+          <span className="neon text-center text-[22px] leading-none min-[400px]:text-2xl">If you ain't Supah, you ain't Dupah!</span>
           <span className="neon-open shrink-0 text-xs">OPEN</span>
         </div>
         {/* phone: a thin strip naming where you are */}
@@ -369,7 +369,7 @@ export function Footer() {
   return (
     <footer className="mt-10 bg-felt px-4 py-8 text-xs leading-relaxed text-[#9d958b]">
       <div className="mx-auto grid max-w-7xl gap-3">
-        <p className="font-neon text-2xl text-plate">If you ain't Supah, you ain't Dupah.</p>
+        <p className="font-neon text-2xl text-plate">If you ain't Supah, you ain't Dupah!</p>
         <p>
           <b className="text-[#d8d0c5]">Supah Dupah is a parody. It's play money. Nothing here is real.</b> Not a registered anything. Not
           affiliated with dem other so-called "exchanges" (they use spoons). All goods listed fell off a truck of their own free will. Past

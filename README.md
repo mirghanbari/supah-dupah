@@ -1,6 +1,6 @@
 # Supah Dupah
 
-**If you ain't Supah, you ain't Dupah.**
+**If you ain't Supah, you ain't Dupah!**
 
 A parody prediction market and "fell off da truck" futures exchange, run out of the back of a 1990s New York slice joint. Play money only. Nothing here is real.
 
