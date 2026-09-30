@@ -13,6 +13,7 @@ import { Lobby } from "./pages/Lobby";
 import { Market } from "./pages/Market";
 import { NotFound } from "./pages/NotFound";
 import { Office } from "./pages/Office";
+import { Pick } from "./pages/Pick";
 import { Section } from "./pages/Section";
 import { Tab } from "./pages/Tab";
 import { Van } from "./pages/Van";
@@ -38,6 +39,7 @@ function Pages() {
           <Routes location={loc}>
             <Route path="/" element={<Lobby />} />
             <Route path="/kitchen" element={<Kitchen />} />
+            <Route path="/pick" element={<Pick />} />
             <Route path="/van" element={<Van />} />
             <Route path="/crust" element={<Crust />} />
             <Route path="/section/:cat" element={<Section />} />

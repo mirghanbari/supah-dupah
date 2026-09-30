@@ -13,6 +13,7 @@ import { Ticker } from "./Ticker";
 const NAV = [
   { to: "/", label: "Hot Right Now", end: true },
   { to: "/kitchen", label: "Da Back Kitchen" },
+  { to: "/pick", label: "Pick A Number" },
   { to: "/section/truck", label: "Fell Off Da Truck" },
   { to: "/van", label: "Truck Futures" },
   { to: "/crust", label: "Crust Sports" },

@@ -126,3 +126,18 @@ export type Standing = {
 };
 
 export type TickerItem = { text: string; tone: "up" | "dn" | "halt" | "plain" };
+
+export type PickResult = {
+  pick: number;
+  draw: number;
+  win: boolean;
+  close: boolean; // missed by exactly one
+  betCents: number;
+  payoutCents: number;
+  balanceCents: number;
+};
+
+export type PickState = {
+  recent: { user: string; pick: number; draw: number; betCents: number; payoutCents: number; at: number }[];
+  mine: { plays: number; wins: number; closeCalls: number; netCents: number } | null;
+};

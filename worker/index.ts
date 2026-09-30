@@ -19,6 +19,7 @@ import { maybeTick, tick } from "./bots";
 import { HttpError, type AppEnv, type Env, type MarketRow, type UserRow } from "./env";
 import { kitchenState, standings } from "./kitchen";
 import { addComment, buy, getMarket, listMarkets, marketDetail, sell, settle } from "./markets";
+import { pickState, playPick } from "./pick";
 import { ensureSeeded } from "./seed";
 import { boxCost, closeVan, myVan, openVan, vanBoard } from "./van";
 import { vanPrice } from "./vanPricing";
@@ -169,6 +170,16 @@ app.post("/van/close", async (c) => {
   const u = requireUser(c.get("user"));
   const b = await body<{ id: number }>(c);
   return c.json(await closeVan(c.env, u, b.id));
+});
+
+// ---------- pick a number ----------
+
+app.get("/pick", async (c) => c.json(await pickState(c.env, c.get("user"))));
+
+app.post("/pick", async (c) => {
+  const u = requireUser(c.get("user"));
+  const b = await body<{ pick: number; cents: number }>(c);
+  return c.json(await playPick(c.env, u, b.pick, b.cents));
 });
 
 // ---------- your tab ----------

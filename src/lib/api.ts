@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { shopNow, syncClock } from "./clock";
-import type { KitchenState, LeaderRow, MarketDetail, MarketSummary, Me, Standing, TabState, TickerItem, VanPosition, VanRow } from "../../shared/types";
+import type { KitchenState, LeaderRow, MarketDetail, MarketSummary, Me, PickResult, PickState, Standing, TabState, TickerItem, VanPosition, VanRow } from "../../shared/types";
 
 export class ApiError extends Error {
   constructor(
@@ -44,6 +44,8 @@ export const api = {
   vanClose: (id: number) => call<VanPosition & { proceeds: number }>("/van/close", { id }),
   tab: () => call<TabState>("/tab"),
   bailout: () => call<{ ok: true }>("/bailout", {}),
+  pickState: () => call<PickState>("/pick"),
+  pick: (pick: number, cents: number) => call<PickResult>("/pick", { pick, cents }),
   ledgerAfter: (after: number) => call<{ entries: { id: number; kind: string; cents: number; memo: string }[] }>(`/ledger?after=${after}`),
   leaderboard: () => call<{ leaders: LeaderRow[] }>("/leaderboard"),
   ticker: () => call<{ items: TickerItem[] }>("/ticker"),
@@ -61,6 +63,7 @@ export const useVan = () => useQuery({ queryKey: ["van"], queryFn: api.van, refe
 export const useTab = (enabled: boolean) => useQuery({ queryKey: ["tab"], queryFn: api.tab, refetchInterval: 8_000, enabled });
 export const useStandings = () => useQuery({ queryKey: ["standings"], queryFn: api.standings, refetchInterval: 30_000 });
 export const useLeaders = () => useQuery({ queryKey: ["leaders"], queryFn: api.leaderboard, refetchInterval: 20_000 });
+export const usePickState = () => useQuery({ queryKey: ["pick"], queryFn: api.pickState, refetchInterval: 10_000 });
 export const useTicker = () => useQuery({ queryKey: ["ticker"], queryFn: api.ticker, refetchInterval: 30_000 });
 
 /** Mutation that refreshes everything money-related afterwards. */

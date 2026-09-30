@@ -230,6 +230,22 @@ class SoundEngine {
     }
   }
 
+  /** Game-show wrong-answer buzzer. */
+  buzzer() {
+    const r = this.ready();
+    if (!r) return;
+    this.tone(110, r.t, 0.45, 0.22, "sawtooth");
+    this.tone(116, r.t, 0.45, 0.18, "square");
+  }
+
+  /** Deli "now serving" ding-dong. */
+  dingDong() {
+    const r = this.ready();
+    if (!r) return;
+    this.tone(1319, r.t, 0.5, 0.25);
+    this.tone(1047, r.t + 0.28, 0.8, 0.25);
+  }
+
   /** Pager chirp. */
   beep() {
     const r = this.ready();
