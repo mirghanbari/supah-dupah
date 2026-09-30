@@ -439,7 +439,7 @@ class SoundEngine {
     this.emit();
   }
 
-  // ---------- Sal's voice ----------
+  // ---------- Tony's voice ----------
 
   say(text: string, rate = 1) {
     if (!this.enabled || !this.voice || typeof speechSynthesis === "undefined") return;

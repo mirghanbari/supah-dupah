@@ -29,11 +29,11 @@ export function Section() {
             <MarketCard key={m.slug} m={m} i={i} />
           ))}
         </div>
-        {open.data && !live.length && <p className="font-hand text-ink-soft">Nothin' on the menu here right now. Ask Sal.</p>}
+        {open.data && !live.length && <p className="font-hand text-ink-soft">Nothin' on the menu here right now. Ask Tony.</p>}
       </section>
       {settled.length > 0 && (
         <section className="grid gap-4">
-          <SectionHead title="Already Settled" aside="Sal has spoken" />
+          <SectionHead title="Already Settled" aside="Tony has spoken" />
           <div className="grid gap-4 opacity-80 sm:grid-cols-2 lg:grid-cols-3">
             {settled.map((m, i) => (
               <MarketCard key={m.slug} m={m} i={i} />

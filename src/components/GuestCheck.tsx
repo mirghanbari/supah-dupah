@@ -23,7 +23,7 @@ type Props = {
 const TOPPINGS = [
   { id: "plain", label: "Plain", note: "regular order" },
   { id: "cheese", label: "Extra Cheese", note: "doubles it" },
-  { id: "stuffed", label: "Stuffed Crust", note: "everything you got. don't." },
+  { id: "stuffed", label: "Stuffed Crust", note: "everything you got, up to $1,000. don't." },
 ] as const;
 
 export function GuestCheck({ slug, title, outcomes, prices, b, open, closedNote, mine, pick, onPick, table = "B-12" }: Props) {
@@ -132,7 +132,7 @@ export function GuestCheck({ slug, title, outcomes, prices, b, open, closedNote,
                 <input
                   id={`amt-${slug}`}
                   inputMode="decimal"
-                  value={topping === "stuffed" ? ((me.balanceCents / 100).toFixed(2)) : amount}
+                  value={topping === "stuffed" ? (spend / 100).toFixed(2) : amount}
                   disabled={topping === "stuffed"}
                   onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
                   className="w-full border-0 border-b-2 border-check-line bg-transparent px-0 py-0.5 font-hand text-2xl text-pen outline-none"

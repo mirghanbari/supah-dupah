@@ -1,7 +1,6 @@
-import { hashStr, mulberry32 } from "./rng";
-
-// Truck futures. Prices are public and deterministic: a slow wave, a faster wave,
-// and hashed noise knotted every 5 minutes, all in cents between 2 and 98.
+// Truck futures. Each contract's price is a random walk built from secret per-minute
+// shocks (see worker/vanPricing.ts), so nobody can compute tomorrow's price from the code.
+// This file only knows how to turn a stream of shocks into a price.
 
 export type Contract = {
   symbol: string;
@@ -29,7 +28,7 @@ export const HALT_REASONS = [
   "HALTED: STILL FALLIN'",
   "HALTED: COPS ON DA BLOCK",
   "HALTED: VAN DOUBLE-PARKED",
-  "HALTED: SAL'S ON DA PHONE",
+  "HALTED: TONY'S ON DA PHONE",
   "HALTED: NOBODY KNOWS NOTHIN'",
 ];
 
@@ -37,31 +36,31 @@ export function contract(symbol: string): Contract | undefined {
   return CONTRACTS.find((c) => c.symbol === symbol);
 }
 
-function knot(symbol: string, k: number): number {
-  return mulberry32(hashStr(symbol) ^ Math.imul(k, 2654435761))() * 2 - 1;
-}
+/** Minute-level shocks decay slowly; half-hour "new shipment" shocks set the bigger swings. */
+export const FAST = { lambda: 0.985, window: 300 };
+export const SLOW = { lambda: 0.85, window: 30, minutes: 30 };
+const FAST_STD = Math.sqrt(1 / 3 / (1 - FAST.lambda ** 2));
+const SLOW_STD = Math.sqrt(1 / 3 / (1 - SLOW.lambda ** 2));
 
-export function vanPrice(c: Contract, t: number): number {
-  const m = t / 60_000;
-  const phase = (hashStr(c.symbol) % 1000) / 159;
-  const k = Math.floor(m / 5);
-  const f = m / 5 - k;
-  const smooth = f * f * (3 - 2 * f);
-  const noise = knot(c.symbol, k) * (1 - smooth) + knot(c.symbol, k + 1) * smooth;
-  const p = c.base + c.swing * Math.sin(m / 180 + phase) + c.swing * 0.5 * Math.sin(m / 23 + phase * 2) + c.chop * noise;
+/** A shock in [-1, 1] for the given stream and index (minute for "fast", half-hour for "slow"). */
+export type Shocks = (stream: "fast" | "slow", index: number) => number;
+
+export const minuteOf = (t: number) => Math.floor(t / 60_000);
+
+export function priceAt(c: Contract, minute: number, shock: Shocks): number {
+  let fast = 0;
+  let w = 1;
+  for (let i = 0; i < FAST.window; i++, w *= FAST.lambda) fast += w * shock("fast", minute - i);
+  const half = Math.floor(minute / SLOW.minutes);
+  let slow = 0;
+  w = 1;
+  for (let j = 0; j < SLOW.window; j++, w *= SLOW.lambda) slow += w * shock("slow", half - j);
+  const p = c.base + c.swing * 0.9 * (slow / SLOW_STD) + c.chop * 0.8 * (fast / FAST_STD);
   return Math.max(2, Math.min(98, Math.round(p)));
 }
 
 export function haltReason(t: number): string {
   return HALT_REASONS[Math.floor(t / 600_000) % HALT_REASONS.length];
-}
-
-/** Minute-by-minute history ending at t. */
-export function vanHistory(c: Contract, t: number, minutes: number): number[] {
-  const end = Math.floor(t / 60_000) * 60_000;
-  const out: number[] = [];
-  for (let i = minutes - 1; i >= 0; i--) out.push(vanPrice(c, end - i * 60_000));
-  return out;
 }
 
 export function heat(change: number, price: number): { label: string; level: 0 | 1 | 2 | 3 | 4 } {

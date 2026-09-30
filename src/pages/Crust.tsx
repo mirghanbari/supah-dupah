@@ -107,7 +107,7 @@ export function Crust() {
       </div>
 
       <section className="grid gap-4">
-        <SectionHead title="Events & Prop Bets" aside="resolved by Sal, who was there" />
+        <SectionHead title="Events & Prop Bets" aside="resolved by Tony, who was there" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {crust.map((m, i) => (
             <MarketCard key={m.slug} m={m} i={i} />

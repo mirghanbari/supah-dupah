@@ -57,7 +57,7 @@ export function SoundControls() {
           if (sound.voice) sound.say("Fuhgeddaboudit.");
         }}
       >
-        Sal's voice
+        Tony's voice
       </button>
       <button
         className={`${chip} ${sound.jukebox ? "border-neon bg-neon text-plate" : "border-plate/40 text-plate/70"}`}
@@ -110,7 +110,7 @@ export function Storefront() {
                   className="btn btn-cheese text-sm"
                   onClick={() => {
                     sound.register();
-                    fx.page("SAL: WE DON'T TAKE CARDS. OR CASH. IT'S FAKE MONEY, GENIUS.");
+                    fx.page("TONY: WE DON'T TAKE CARDS. OR CASH. IT'S FAKE MONEY, GENIUS.");
                   }}
                 >
                   Deposit (Cash Only)
@@ -123,9 +123,9 @@ export function Storefront() {
                     <Link className="label rounded px-2 py-1.5 text-sm hover:bg-tile" to="/tab">
                       Your Tab
                     </Link>
-                    {me.isSal && (
-                      <Link className="label rounded px-2 py-1.5 text-sm hover:bg-tile" to="/sal">
-                        Sal's Office
+                    {me.isBoss && (
+                      <Link className="label rounded px-2 py-1.5 text-sm hover:bg-tile" to="/office">
+                        Tony's Office
                       </Link>
                     )}
                     <button
@@ -186,7 +186,7 @@ export function Footer() {
           <b className="text-[#d8d0c5]">Supah Dupah is a parody. It's play money. Nothing here is real.</b> Not a registered anything. Not
           affiliated with dem other so-called "exchanges" (they use spoons). All goods listed fell off a truck of their own free will. Past
           tosses do not guarantee future tosses. Every contract pays out one (1) dollar slice. No real people are depicted; any resemblance to
-          a real Sal is a coincidence, and there's a lotta Sals.
+          a real Tony is a coincidence, and there's a lotta Tonys.
         </p>
         <p>Cash only. No substitutions. Bathroom is for customers. © 1994–forever, probably.</p>
       </div>

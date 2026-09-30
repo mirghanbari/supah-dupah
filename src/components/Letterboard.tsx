@@ -42,7 +42,7 @@ export function Letterboard({ markets, title = "Today's Specials" }: { markets: 
           </Link>
         );
       })}
-      <p className="mt-1 text-center text-[11px] tracking-[.12em] text-[#9d958b]">No substitutions · Prices subject to Sal</p>
+      <p className="mt-1 text-center text-[11px] tracking-[.12em] text-[#9d958b]">No substitutions · Prices subject to Tony</p>
     </aside>
   );
 }

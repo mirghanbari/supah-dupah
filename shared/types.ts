@@ -13,7 +13,7 @@ export type Me = {
   id: number;
   username: string;
   balanceCents: number;
-  isSal: boolean;
+  isBoss: boolean;
   hood: string;
   canBailout: boolean;
   lastLedger: { id: number; kind: string; cents: number; memo: string } | null;
@@ -44,7 +44,7 @@ export type Trade = {
   at: number;
 };
 
-export type Comment = { id: number; user: string; isSal: boolean; body: string; at: number; holding: string | null };
+export type Comment = { id: number; user: string; isBoss: boolean; body: string; at: number; holding: string | null };
 
 export type MarketDetail = MarketSummary & {
   rules: [string, string][];
@@ -108,7 +108,7 @@ export type TabState = {
   canBailout: boolean;
 };
 
-export type LeaderRow = { rank: number; user: string; hood: string; netWorthCents: number; bot: boolean; isSal: boolean };
+export type LeaderRow = { rank: number; user: string; hood: string; netWorthCents: number; bot: boolean; isBoss: boolean };
 
 export type Standing = {
   id: string;

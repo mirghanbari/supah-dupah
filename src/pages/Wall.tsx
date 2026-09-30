@@ -5,7 +5,7 @@ import { avatarColor, initials, money, signedMoney } from "../lib/format";
 const CAPTIONS = [
   "\"Best exchange in da five boroughs.\"",
   "\"I made 40 slices on da Discman spread.\"",
-  "\"Sal's a genius. Don't tell him.\"",
+  "\"Tony's a genius. Don't tell him.\"",
   "\"My mother says hi.\"",
   "\"I only come for the garlic knots.\"",
   "\"Fuhgeddaboudit.\"",
@@ -64,7 +64,7 @@ export function Wall() {
               <tr key={r.user} className={`border-b border-grout ${me?.username === r.user ? "bg-cheese/20" : ""}`}>
                 <td className="p-2 font-led text-xl">{r.rank}</td>
                 <td className="p-2 font-bold">
-                  {r.user} {r.isSal && <span className="pill bg-sauce text-plate">Sal</span>}
+                  {r.user} {r.isBoss && <span className="pill bg-sauce text-plate">Tony</span>}
                 </td>
                 <td className="p-2 text-ink-soft">{r.hood || "—"}</td>
                 <td className="p-2 text-right font-led text-xl">{money(r.netWorthCents)}</td>

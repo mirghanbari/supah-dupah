@@ -2,15 +2,15 @@ export type Env = {
   DB: D1Database;
   ASSETS: Fetcher;
   TOSS_SECRET: string;
-  /** Username that becomes Sal (admin) when it registers. */
-  SAL_USERNAME?: string;
+  /** Secret code. Whoever types it into "Who sent you?" at sign-up becomes Tony (admin). */
+  BOSS_CODE?: string;
 };
 
 export type UserRow = {
   id: number;
   username: string;
   balance_cents: number;
-  is_sal: number;
+  is_boss: number;
   is_bot: number;
   hood: string;
   last_bailout: number;
@@ -40,7 +40,7 @@ export type MarketRow = {
 };
 
 export class HttpError extends Error {
-  constructor(public status: 400 | 401 | 403 | 404 | 409, message: string) {
+  constructor(public status: 400 | 401 | 403 | 404 | 409 | 429, message: string) {
     super(message);
   }
 }

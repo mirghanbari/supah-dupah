@@ -116,7 +116,7 @@ export function fairOver(t: Tosser): number {
 export const TOSS_CALLS = {
   intro: ["{nick} flours da counter…", "{nick} cracks his knuckles.", "{nick} says a little prayer to San Gennaro.", "{nick} slaps da dough. Crowd goes quiet."],
   toss: ["Up she goes!", "Beautiful!", "Look at dat spin!", "Madonna mia!", "Clean hands!", "Dat's a toss!", "He's cookin' now!"],
-  ceiling: ["HIT DA CEILING! Counts!", "CEILING! Sal is yellin'!", "Ceiling tile's got flour on it now!"],
+  ceiling: ["HIT DA CEILING! Counts!", "CEILING! Tony is yellin'!", "Ceiling tile's got flour on it now!"],
   spin: ["Knuckle spin. Don't count.", "Just showin' off. No toss."],
   sneeze: ["He sneezed! Flour everywhere!", "Bless you! Toss clock keeps runnin'."],
   floor: ["FLOOR PIE!!! Oh no. Oh no no no.", "IT'S ON DA FLOOR! Five-second rule does NOT apply!"],

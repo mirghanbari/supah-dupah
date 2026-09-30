@@ -12,7 +12,7 @@ import { Kitchen } from "./pages/Kitchen";
 import { Lobby } from "./pages/Lobby";
 import { Market } from "./pages/Market";
 import { NotFound } from "./pages/NotFound";
-import { Sal } from "./pages/Sal";
+import { Office } from "./pages/Office";
 import { Section } from "./pages/Section";
 import { Tab } from "./pages/Tab";
 import { Van } from "./pages/Van";
@@ -45,7 +45,7 @@ function Pages() {
             <Route path="/tab" element={<Tab />} />
             <Route path="/wall" element={<Wall />} />
             <Route path="/join" element={<Join />} />
-            <Route path="/sal" element={<Sal />} />
+            <Route path="/office" element={<Office />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

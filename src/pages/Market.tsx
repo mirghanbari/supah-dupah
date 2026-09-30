@@ -8,6 +8,7 @@ import { PriceChart } from "../components/PriceChart";
 import { api, ApiError, useMarket, useMe } from "../lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { ago, avatarColor, initials, money, pct, shares, until, vol } from "../lib/format";
+import { shopNow } from "../lib/clock";
 import { sound } from "../lib/sound";
 import { NotFound } from "./NotFound";
 
@@ -23,7 +24,7 @@ export function Market() {
   if (error instanceof ApiError && error.status === 404) return <NotFound />;
   if (!m) return <div className="plate greasy h-96 animate-pulse" />;
 
-  const open = m.status === "open" && (m.closesAt == null || Date.now() < m.closesAt);
+  const open = m.status === "open" && (m.closesAt == null || shopNow() < m.closesAt);
   const lead = m.prices.indexOf(Math.max(...m.prices));
 
   const post = async () => {
@@ -160,7 +161,7 @@ export function Market() {
                   </div>
                   <div className="min-w-0">
                     <div className="font-bold">
-                      {c.user} {c.isSal && <span className="label rounded-sm bg-sauce px-1 text-[10px] text-plate">Resolver</span>}{" "}
+                      {c.user} {c.isBoss && <span className="label rounded-sm bg-sauce px-1 text-[10px] text-plate">Resolver</span>}{" "}
                       <span className="font-normal text-ink-soft">· {ago(c.at)}</span>
                     </div>
                     <p className="break-words">{c.body}</p>

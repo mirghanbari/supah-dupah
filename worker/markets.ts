@@ -18,16 +18,11 @@ function isTradable(m: MarketRow, now: number) {
   return m.status === "open" && (m.closes_at == null || now < m.closes_at);
 }
 
-/** Price per outcome 24h ago, keyed by market id. */
-async function pricesAt(env: Env, cutoff: number): Promise<Map<number, number[]>> {
-  const rows = await env.DB.prepare(
-    `SELECT market_id, prices FROM trades WHERE id IN (
-       SELECT MAX(id) FROM trades WHERE created_at < ? GROUP BY market_id)`,
-  )
-    .bind(cutoff)
-    .all<{ market_id: number; prices: string }>();
-  return new Map(rows.results.map((r) => [r.market_id, JSON.parse(r.prices)]));
-}
+/** Each market's last trade before `cutoff`, looked up per market through the (market_id, created_at) index. */
+const PRICES_BEFORE = `(SELECT t.prices FROM trades t WHERE t.market_id = m.id AND t.created_at < ?
+   ORDER BY t.created_at DESC LIMIT 1) AS prices_before`;
+
+type WithBefore = MarketRow & { prices_before: string | null };
 
 export function summarize(m: MarketRow, before?: number[]): MarketSummary {
   const q = parseQ(m);
@@ -52,19 +47,18 @@ export function summarize(m: MarketRow, before?: number[]): MarketSummary {
 
 export async function listMarkets(env: Env, status: "open" | "resolved" = "open"): Promise<MarketSummary[]> {
   const rows = await env.DB.prepare(
-    "SELECT * FROM markets WHERE kind = 'lmsr' AND status = ? ORDER BY featured DESC, volume_cents DESC",
+    `SELECT m.*, ${PRICES_BEFORE} FROM markets m WHERE m.kind = 'lmsr' AND m.status = ? ORDER BY m.featured DESC, m.volume_cents DESC`,
   )
-    .bind(status)
-    .all<MarketRow>();
-  const before = await pricesAt(env, Date.now() - 86_400_000);
-  return rows.results.map((m) => summarize(m, before.get(m.id)));
+    .bind(Date.now() - 86_400_000, status)
+    .all<WithBefore>();
+  return rows.results.map((m) => summarize(m, m.prices_before ? JSON.parse(m.prices_before) : undefined));
 }
 
 export async function recentTrades(env: Env, marketId: number, limit = 20): Promise<Trade[]> {
   const rows = await env.DB.prepare(
     `SELECT u.username AS user, u.is_bot AS bot, t.outcome, t.shares, t.cents, t.created_at AS at
      FROM trades t JOIN users u ON u.id = t.user_id
-     WHERE t.market_id = ? ORDER BY t.id DESC LIMIT ?`,
+     WHERE t.market_id = ? ORDER BY t.created_at DESC LIMIT ?`,
   )
     .bind(marketId, limit)
     .all<Omit<Trade, "bot"> & { bot: number }>();
@@ -82,16 +76,19 @@ export async function myPositions(env: Env, userId: number | undefined, marketId
 }
 
 export async function marketDetail(env: Env, slug: string, user: UserRow | null): Promise<MarketDetail> {
-  const m = await getMarket(env, slug);
-  const [hist, trades, comments, mine, before] = await Promise.all([
+  const m = await env.DB.prepare(`SELECT m.*, ${PRICES_BEFORE} FROM markets m WHERE m.slug = ?`)
+    .bind(Date.now() - 86_400_000, slug)
+    .first<WithBefore>();
+  if (!m) throw new HttpError(404, "Never heard of it.");
+  const [hist, trades, comments, mine] = await Promise.all([
     env.DB.prepare(
-      "SELECT created_at AS at, prices FROM (SELECT * FROM trades WHERE market_id = ? ORDER BY id DESC LIMIT 400) ORDER BY id",
+      "SELECT created_at AS at, prices FROM (SELECT * FROM trades WHERE market_id = ? ORDER BY created_at DESC LIMIT 400) ORDER BY created_at",
     )
       .bind(m.id)
       .all<{ at: number; prices: string }>(),
     recentTrades(env, m.id),
     env.DB.prepare(
-      `SELECT c.id, u.username AS user, u.is_sal AS isSal, c.body, c.created_at AS at,
+      `SELECT c.id, u.username AS user, u.is_boss AS isBoss, c.body, c.created_at AS at,
          (SELECT o.value FROM positions p, json_each(?2) o
             WHERE p.user_id = c.user_id AND p.market_id = c.market_id AND p.shares > 0.5 AND o.key = p.outcome
             ORDER BY p.shares DESC LIMIT 1) AS holding
@@ -99,19 +96,18 @@ export async function marketDetail(env: Env, slug: string, user: UserRow | null)
        WHERE c.market_id = ?1 ORDER BY c.id DESC LIMIT 60`,
     )
       .bind(m.id, m.outcomes)
-      .all<Omit<Comment, "isSal"> & { isSal: number }>(),
+      .all<Omit<Comment, "isBoss"> & { isBoss: number }>(),
     myPositions(env, user?.id, m.id),
-    pricesAt(env, Date.now() - 86_400_000),
   ]);
   const history = hist.results.map((h) => ({ at: h.at, prices: JSON.parse(h.prices) as number[] }));
   if (m.q0) history.unshift({ at: m.created_at, prices: prices(JSON.parse(m.q0), m.b) });
   return {
-    ...summarize(m, before.get(m.id)),
+    ...summarize(m, m.prices_before ? JSON.parse(m.prices_before) : undefined),
     rules: JSON.parse(m.rules),
     b: m.b,
     history,
     trades,
-    comments: comments.results.map((c) => ({ ...c, isSal: !!c.isSal })),
+    comments: comments.results.map((c) => ({ ...c, isBoss: !!c.isBoss })),
     mine,
   };
 }
@@ -198,38 +194,42 @@ export async function sell(env: Env, user: UserRow, slug: string, outcome: numbe
   throw new HttpError(409, "It's a madhouse in here. Try again.");
 }
 
-/** Pay out winners, record losers, close the market. Safe to call twice. */
+/**
+ * Pay out winners, record losers, close the market, all in one transaction.
+ * Payouts are computed in SQL from whatever positions exist when the batch runs,
+ * so a buy that lands mid-settlement is either paid or rejected, never lost.
+ * Safe to call twice.
+ */
 export async function settle(env: Env, m: MarketRow, winner: number, result?: unknown) {
   const now = Date.now();
   const outcomes: string[] = JSON.parse(m.outcomes);
-  const pos = await env.DB.prepare("SELECT user_id, outcome, shares, cost_cents FROM positions WHERE market_id = ? AND shares > 0.000001")
-    .bind(m.id)
-    .all<{ user_id: number; outcome: number; shares: number; cost_cents: number }>();
   const short = m.title.length > 60 ? m.title.slice(0, 57) + "…" : m.title;
-  const stmts: D1PreparedStatement[] = [
-    env.DB.prepare("UPDATE markets SET status = 'resolved', winner = ?, resolved_at = ?, result = ? WHERE id = ? AND status = 'open'")
-      .bind(winner, now, result === undefined ? null : JSON.stringify(result), m.id),
-    guard(env.DB),
-  ];
-  for (const p of pos.results) {
-    if (p.outcome === winner) {
-      const pay = Math.round(p.shares * 100);
-      stmts.push(env.DB.prepare("UPDATE users SET balance_cents = balance_cents + ? WHERE id = ?").bind(pay, p.user_id));
-      stmts.push(
-        env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'payout', ?, ?, ?)")
-          .bind(p.user_id, pay, `WON ${outcomes[winner]} · ${short}`, now),
-      );
-    } else {
-      stmts.push(
-        env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'loss', ?, ?, ?)")
-          .bind(p.user_id, -p.cost_cents, `LOST ${outcomes[p.outcome]} · ${short}`, now),
-      );
-    }
-  }
-  stmts.push(env.DB.prepare("DELETE FROM positions WHERE market_id = ?").bind(m.id));
-  stmts.push(clearGuard(env.DB));
+  const live = "market_id = ?1 AND shares > 0.000001";
   try {
-    await env.DB.batch(stmts);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE markets SET status = 'resolved', winner = ?, resolved_at = ?, result = ? WHERE id = ? AND status = 'open'")
+        .bind(winner, now, result === undefined ? null : JSON.stringify(result), m.id),
+      guard(env.DB),
+      // losses first so a winner's newest ledger row is the payout
+      env.DB.prepare(
+        `INSERT INTO ledger (user_id, kind, cents, memo, created_at)
+         SELECT user_id, 'loss', -cost_cents, 'LOST ' || json_extract(?3, '$[' || outcome || ']') || ' · ' || ?4, ?5
+         FROM positions WHERE ${live} AND outcome != ?2`,
+      ).bind(m.id, winner, m.outcomes, short, now),
+      env.DB.prepare(
+        `INSERT INTO ledger (user_id, kind, cents, memo, created_at)
+         SELECT user_id, 'payout', CAST(ROUND(shares * 100) AS INTEGER), ?3, ?4
+         FROM positions WHERE ${live} AND outcome = ?2`,
+      ).bind(m.id, winner, `WON ${outcomes[winner]} · ${short}`, now),
+      env.DB.prepare(
+        `UPDATE users SET balance_cents = balance_cents + (
+           SELECT CAST(ROUND(p.shares * 100) AS INTEGER) FROM positions p
+           WHERE p.user_id = users.id AND p.market_id = ?1 AND p.outcome = ?2)
+         WHERE id IN (SELECT user_id FROM positions WHERE ${live} AND outcome = ?2)`,
+      ).bind(m.id, winner),
+      env.DB.prepare("DELETE FROM positions WHERE market_id = ?").bind(m.id),
+      clearGuard(env.DB),
+    ]);
     return true;
   } catch (e) {
     if (isGuardFailure(e)) return false; // already settled by someone else

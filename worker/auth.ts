@@ -16,7 +16,7 @@ export async function hashPassword(password: string, saltHex?: string) {
   return { hash: hex(bits), salt: hex(salt) };
 }
 
-function timingSafeEqual(a: string, b: string) {
+export function timingSafeEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
   let r = 0;
   for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
@@ -53,7 +53,7 @@ export async function currentUser(c: Context<AppEnv>): Promise<UserRow | null> {
   const token = getCookie(c, COOKIE);
   if (!token) return null;
   return c.env.DB.prepare(
-    `SELECT u.id, u.username, u.balance_cents, u.is_sal, u.is_bot, u.hood, u.last_bailout
+    `SELECT u.id, u.username, u.balance_cents, u.is_boss, u.is_bot, u.hood, u.last_bailout
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token = ? AND s.expires_at > ?`,
   )
@@ -66,8 +66,49 @@ export function requireUser(user: UserRow | null): UserRow {
   return user;
 }
 
-export function requireSal(user: UserRow | null): UserRow {
+export function requireBoss(user: UserRow | null): UserRow {
   const u = requireUser(user);
-  if (!u.is_sal) throw new HttpError(403, "Only Sal does dat.");
+  if (!u.is_boss) throw new HttpError(403, "Only Tony does dat.");
   return u;
+}
+
+// ---------- sign-in rate limits ----------
+
+const WINDOW_MS = 15 * 60_000;
+const LIMITS = { user: 10, ip: 30 };
+
+function attemptKeys(c: Context<AppEnv>, username: string) {
+  const ip = c.req.header("CF-Connecting-IP") ?? "local";
+  return [
+    { key: `u:${username.toLowerCase()}`, max: LIMITS.user },
+    { key: `ip:${ip}`, max: LIMITS.ip },
+  ];
+}
+
+export async function checkLoginLimit(c: Context<AppEnv>, username: string) {
+  const now = Date.now();
+  for (const { key, max } of attemptKeys(c, username)) {
+    const row = await c.env.DB.prepare("SELECT fails, window_start FROM login_attempts WHERE key = ?").bind(key).first<{ fails: number; window_start: number }>();
+    if (row && now - row.window_start < WINDOW_MS && row.fails >= max) {
+      throw new HttpError(429, "Too many tries. Go get a slice and come back in 15 minutes.");
+    }
+  }
+}
+
+export async function recordLoginFailure(c: Context<AppEnv>, username: string) {
+  const now = Date.now();
+  await c.env.DB.batch(
+    attemptKeys(c, username).map(({ key }) =>
+      c.env.DB.prepare(
+        `INSERT INTO login_attempts (key, fails, window_start) VALUES (?1, 1, ?2)
+         ON CONFLICT (key) DO UPDATE SET
+           fails = CASE WHEN ?2 - window_start >= ?3 THEN 1 ELSE fails + 1 END,
+           window_start = CASE WHEN ?2 - window_start >= ?3 THEN ?2 ELSE window_start END`,
+      ).bind(key, now, WINDOW_MS),
+    ),
+  );
+}
+
+export async function clearLoginFailures(c: Context<AppEnv>, username: string) {
+  await c.env.DB.prepare("DELETE FROM login_attempts WHERE key = ?").bind(`u:${username.toLowerCase()}`).run();
 }

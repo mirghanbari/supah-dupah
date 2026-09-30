@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cost, prices, proceedsForSell, qForPrices, sharesForSpend } from "./lmsr";
 import { fairOver, INTRO_MS, SHOW_MS, simulateRound, TOSSERS } from "./toss";
-import { CONTRACTS, vanPrice } from "./van";
+import { CONTRACTS, priceAt, type Shocks } from "./van";
 
 describe("lmsr", () => {
   it("prices sum to one and match the opening odds", () => {
@@ -62,13 +62,26 @@ describe("toss simulator", () => {
 });
 
 describe("van prices", () => {
-  it("stay between 2¢ and 98¢", () => {
+  const random: Shocks = () => Math.random() * 2 - 1;
+
+  it("stay between 2¢ and 98¢ no matter the shocks", () => {
     for (const c of CONTRACTS) {
-      for (let m = 0; m < 5000; m += 7) {
-        const p = vanPrice(c, 1_790_000_000_000 + m * 60_000);
+      for (let m = 0; m < 300; m++) {
+        const p = priceAt(c, m, random);
         expect(p).toBeGreaterThanOrEqual(2);
         expect(p).toBeLessThanOrEqual(98);
       }
     }
+  });
+
+  it("sit at the base price when nothing's happening", () => {
+    for (const c of CONTRACTS) expect(priceAt(c, 1000, () => 0)).toBe(c.base);
+  });
+
+  it("move when a new shock arrives", () => {
+    const c = CONTRACTS[0];
+    const calm: Shocks = () => 0;
+    const jolt: Shocks = (s, i) => (s === "fast" && i === 1000 ? 1 : 0);
+    expect(priceAt(c, 1000, jolt)).toBeGreaterThan(priceAt(c, 1000, calm));
   });
 });

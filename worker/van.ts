@@ -1,14 +1,15 @@
-import { contract, CONTRACTS, haltReason, heat, vanHistory, vanPrice } from "../shared/van";
+import { contract, CONTRACTS, haltReason, heat } from "../shared/van";
 import type { VanPosition, VanRow } from "../shared/types";
 import { clearGuard, guard, HttpError, isGuardFailure, type Env, type UserRow } from "./env";
+import { vanHistory, vanPrice } from "./vanPricing";
 
 type Row = { id: number; symbol: string; side: "long" | "short"; boxes: number; entry_cents: number; opened_at: number };
 
 export const boxCost = (side: "long" | "short", price: number) => (side === "long" ? price : 100 - price);
 
-export function markPosition(r: Row, now: number): VanPosition {
+export async function markPosition(env: Env, r: Row, now: number): Promise<VanPosition> {
   const c = contract(r.symbol)!;
-  const mark = c.halted ? r.entry_cents : vanPrice(c, now);
+  const mark = c.halted ? r.entry_cents : await vanPrice(env, c, now);
   const pnl = (boxCost(r.side, mark) - boxCost(r.side, r.entry_cents)) * r.boxes;
   return { id: r.id, symbol: r.symbol, side: r.side, boxes: r.boxes, entryCents: r.entry_cents, markCents: mark, pnlCents: pnl, openedAt: r.opened_at };
 }
@@ -18,8 +19,8 @@ export async function vanBoard(env: Env, now: number): Promise<VanRow[]> {
     "SELECT symbol, SUM(boxes) AS boxes, COUNT(DISTINCT user_id) AS guys FROM van_positions WHERE closed_at IS NULL GROUP BY symbol",
   ).all<{ symbol: string; boxes: number; guys: number }>();
   const bySym = new Map(oi.results.map((r) => [r.symbol, r]));
-  return CONTRACTS.map((c) => {
-    const history = vanHistory(c, now, 120);
+  return Promise.all(CONTRACTS.map(async (c) => {
+    const history = await vanHistory(env, c, now, 120);
     const price = history[history.length - 1];
     const change = price - history[history.length - 61];
     return {
@@ -33,7 +34,7 @@ export async function vanBoard(env: Env, now: number): Promise<VanRow[]> {
       boxes: bySym.get(c.symbol)?.boxes ?? 0,
       guys: bySym.get(c.symbol)?.guys ?? 0,
     };
-  });
+  }));
 }
 
 export async function myVan(env: Env, userId: number, now: number): Promise<VanPosition[]> {
@@ -42,7 +43,7 @@ export async function myVan(env: Env, userId: number, now: number): Promise<VanP
   )
     .bind(userId)
     .all<Row>();
-  return rows.results.map((r) => markPosition(r, now));
+  return Promise.all(rows.results.map((r) => markPosition(env, r, now)));
 }
 
 export async function openVan(env: Env, user: UserRow, symbol: string, side: string, boxes: number) {
@@ -52,7 +53,7 @@ export async function openVan(env: Env, user: UserRow, symbol: string, side: str
   if (side !== "long" && side !== "short") throw new HttpError(400, "Long or short. Pick one.");
   if (!Number.isInteger(boxes) || boxes < 1 || boxes > 500) throw new HttpError(400, "1 to 500 boxes. The van only holds so much.");
   const now = Date.now();
-  const price = vanPrice(c, now);
+  const price = await vanPrice(env, c, now);
   const cost = boxCost(side, price) * boxes;
   try {
     await env.DB.batch([
@@ -77,7 +78,7 @@ export async function closeVan(env: Env, user: UserRow, id: number) {
   const c = contract(r.symbol)!;
   const now = Date.now();
   if (c.halted) throw new HttpError(409, haltReason(now));
-  const mark = markPosition(r, now);
+  const mark = await markPosition(env, r, now);
   const proceeds = boxCost(r.side, mark.markCents) * r.boxes;
   try {
     await env.DB.batch([

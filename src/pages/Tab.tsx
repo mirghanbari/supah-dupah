@@ -65,7 +65,7 @@ export function Tab() {
             <b>{money(data.netWorthCents)}</b>
           </div>
           <div className="flex justify-between">
-            <span>VS. SAL'S C-NOTE</span>
+            <span>VS. TONY'S C-NOTE</span>
             <span className={pl >= 0 ? "text-basil" : "text-sauce"}>{signedMoney(pl)}</span>
           </div>
           <div className="mt-3 text-center font-slab text-sm tracking-wider text-[#1b4fa0]">
@@ -80,7 +80,7 @@ export function Tab() {
         <div className="plate grid gap-3 p-5">
           <h1 className="font-slab text-3xl">Your Tab</h1>
           <p className="text-sm text-ink-soft">
-            Everything you got going, marked at today's prices. Money comes in when Sal settles a market, or when a live pie hits the oven.
+            Everything you got going, marked at today's prices. Money comes in when Tony settles a market, or when a live pie hits the oven.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -99,14 +99,14 @@ export function Tab() {
                 onClick={async () => {
                   await bail.mutateAsync(undefined);
                   sound.register();
-                  fx.stamp("SAL SPOTTED YA", "good", "+$20.00");
+                  fx.stamp("TONY SPOTTED YA", "good", "+$20.00");
                 }}
               >
-                Ask Sal for a twenty
+                Ask Tony for a twenty
               </button>
             )}
           </div>
-          {!data.canBailout && data.balanceCents < 500 && <p className="font-hand text-sauce">Sal already spotted you today. Come back tomorrow.</p>}
+          {!data.canBailout && data.balanceCents < 500 && <p className="font-hand text-sauce">Tony already spotted you today. Come back tomorrow.</p>}
         </div>
 
         <section className="plate grid gap-2 p-5">

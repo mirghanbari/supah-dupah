@@ -1,3 +1,4 @@
 # Local dev secrets. Copy to .dev.vars.
 TOSS_SECRET="change-me-to-a-long-random-string"
-SAL_USERNAME="sal"
+# Type this into "Who sent you?" when you sign up to become Tony (admin).
+BOSS_CODE="change-me-too"

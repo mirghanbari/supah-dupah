@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { syncClock } from "./clock";
+import { shopNow, syncClock } from "./clock";
 import type { KitchenState, LeaderRow, MarketDetail, MarketSummary, Me, Standing, TabState, TickerItem, VanPosition, VanRow } from "../../shared/types";
 
 export class ApiError extends Error {
@@ -18,6 +18,9 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
     body: body === undefined ? undefined : JSON.stringify(body),
     credentials: "same-origin",
   });
+  // Every response carries the server's clock; use it until a precise one (kitchen, van) arrives.
+  const date = Date.parse(res.headers.get("date") ?? "");
+  if (!Number.isNaN(date) && Math.abs(date - shopNow()) > 2_000) syncClock(date);
   const data = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) throw new ApiError(res.status, data.error ?? "Somethin' went wrong.");
   return data as T;
@@ -41,10 +44,11 @@ export const api = {
   vanClose: (id: number) => call<VanPosition & { proceeds: number }>("/van/close", { id }),
   tab: () => call<TabState>("/tab"),
   bailout: () => call<{ ok: true }>("/bailout", {}),
+  ledgerAfter: (after: number) => call<{ entries: { id: number; kind: string; cents: number; memo: string }[] }>(`/ledger?after=${after}`),
   leaderboard: () => call<{ leaders: LeaderRow[] }>("/leaderboard"),
   ticker: () => call<{ items: TickerItem[] }>("/ticker"),
-  salCreate: (b: { title: string; blurb: string; category: string; outcomes: string[]; days: number }) => call<{ slug: string }>("/sal/markets", b),
-  salResolve: (slug: string, winner: number) => call<{ ok: true }>(`/sal/markets/${slug}/resolve`, { winner }),
+  bossCreate: (b: { title: string; blurb: string; category: string; outcomes: string[]; days: number }) => call<{ slug: string }>("/boss/markets", b),
+  bossResolve: (slug: string, winner: number) => call<{ ok: true }>(`/boss/markets/${slug}/resolve`, { winner }),
 };
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: api.me, refetchInterval: 8_000 }).data?.user ?? null;

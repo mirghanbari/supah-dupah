@@ -1,14 +1,27 @@
 import { Hono } from "hono";
 import { prices } from "../shared/lmsr";
 import type { LeaderRow, Me, TabState, TickerItem } from "../shared/types";
-import { contract, vanPrice } from "../shared/van";
-import { currentUser, endSession, hashPassword, requireSal, requireUser, startSession, verifyPassword } from "./auth";
+import { contract } from "../shared/van";
+import {
+  checkLoginLimit,
+  clearLoginFailures,
+  currentUser,
+  endSession,
+  hashPassword,
+  recordLoginFailure,
+  requireBoss,
+  requireUser,
+  startSession,
+  timingSafeEqual,
+  verifyPassword,
+} from "./auth";
 import { maybeTick, tick } from "./bots";
 import { HttpError, type AppEnv, type Env, type MarketRow, type UserRow } from "./env";
 import { kitchenState, standings } from "./kitchen";
 import { addComment, buy, getMarket, listMarkets, marketDetail, sell, settle } from "./markets";
 import { ensureSeeded } from "./seed";
 import { boxCost, closeVan, myVan, openVan, vanBoard } from "./van";
+import { vanPrice } from "./vanPricing";
 
 const app = new Hono<AppEnv>().basePath("/api");
 
@@ -44,7 +57,7 @@ async function me(env: Env, u: UserRow): Promise<Me> {
     .bind(u.id)
     .first<{ id: number; kind: string; cents: number; memo: string }>();
   return {
-    id: u.id, username: u.username, balanceCents: u.balance_cents, isSal: !!u.is_sal, hood: u.hood,
+    id: u.id, username: u.username, balanceCents: u.balance_cents, isBoss: !!u.is_boss, hood: u.hood,
     canBailout: canBailout(u, Date.now()), lastLedger: last ?? null,
   };
 }
@@ -62,17 +75,26 @@ app.post("/join", async (c) => {
   if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) throw new HttpError(400, "Name's gotta be 3 to 20 letters, numbers, or underscores.");
   if ((b.password ?? "").length < 6) throw new HttpError(400, "Password's gotta be 6 or more. Your mother's maiden name don't count.");
   if (b.isCop === "yes") throw new HttpError(403, "Sorry officer, we're closed. We been closed. Always closed.");
+  const taken = "Somebody already goes by dat name around here.";
   const exists = await c.env.DB.prepare("SELECT 1 FROM users WHERE username = ?").bind(username).first();
-  if (exists) throw new HttpError(409, "Somebody already goes by dat name around here.");
+  if (exists) throw new HttpError(409, taken);
   const { hash, salt } = await hashPassword(b.password!);
-  const isSal = c.env.SAL_USERNAME && username.toLowerCase() === c.env.SAL_USERNAME.toLowerCase() ? 1 : 0;
+  const sentBy = (b.sentBy ?? "").trim();
+  const isBoss = c.env.BOSS_CODE && timingSafeEqual(sentBy, c.env.BOSS_CODE) ? 1 : 0;
   const now = Date.now();
-  const res = await c.env.DB.prepare(
-    "INSERT INTO users (username, pass_hash, salt, sent_by, hood, is_cop, is_sal, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-  )
-    .bind(username, hash, salt, (b.sentBy ?? "").slice(0, 60), (b.hood ?? "").slice(0, 40), b.isCop === "retired" ? "retired" : "no", isSal, now)
-    .first<number>("id");
-  await c.env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'welcome', 10000, 'C-NOTE FROM SAL · WELCOME', ?)")
+  let res: number | null;
+  try {
+    res = await c.env.DB.prepare(
+      "INSERT INTO users (username, pass_hash, salt, sent_by, hood, is_cop, is_boss, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    )
+      .bind(username, hash, salt, isBoss ? "" : sentBy.slice(0, 60), (b.hood ?? "").slice(0, 40), b.isCop === "retired" ? "retired" : "no", isBoss, now)
+      .first<number>("id");
+  } catch (e) {
+    // two people grabbed the same name at the same moment
+    if (String(e).includes("UNIQUE constraint failed")) throw new HttpError(409, taken);
+    throw e;
+  }
+  await c.env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'welcome', 10000, 'C-NOTE FROM TONY · WELCOME', ?)")
     .bind(res, now)
     .run();
   await startSession(c, res!);
@@ -81,10 +103,16 @@ app.post("/join", async (c) => {
 
 app.post("/login", async (c) => {
   const b = await body<{ username?: string; password?: string }>(c);
+  const username = (b.username ?? "").trim().slice(0, 40);
+  await checkLoginLimit(c, username);
   const row = await c.env.DB.prepare("SELECT id, pass_hash, salt FROM users WHERE username = ?")
-    .bind((b.username ?? "").trim())
+    .bind(username)
     .first<{ id: number; pass_hash: string; salt: string }>();
-  if (!row || !(await verifyPassword(b.password ?? "", row.pass_hash, row.salt))) throw new HttpError(401, "I don't know you. Try again.");
+  if (!row || !(await verifyPassword(b.password ?? "", row.pass_hash, row.salt))) {
+    await recordLoginFailure(c, username);
+    throw new HttpError(401, "I don't know you. Try again.");
+  }
+  await clearLoginFailures(c, username);
   await startSession(c, row.id);
   return c.json({ ok: true });
 });
@@ -185,13 +213,22 @@ app.get("/tab", async (c) => {
   return c.json(tab);
 });
 
+app.get("/ledger", async (c) => {
+  const u = requireUser(c.get("user"));
+  const after = Number(c.req.query("after") ?? 0) || 0;
+  const rows = await c.env.DB.prepare("SELECT id, kind, cents, memo FROM ledger WHERE user_id = ? AND id > ? ORDER BY id LIMIT 50")
+    .bind(u.id, after)
+    .all<{ id: number; kind: string; cents: number; memo: string }>();
+  return c.json({ entries: rows.results });
+});
+
 app.post("/bailout", async (c) => {
   const u = requireUser(c.get("user"));
   const now = Date.now();
-  if (!canBailout(u, now)) throw new HttpError(409, "Sal says you're doin' fine. Come back when you're broke.");
+  if (!canBailout(u, now)) throw new HttpError(409, "Tony says you're doin' fine. Come back when you're broke.");
   await c.env.DB.batch([
     c.env.DB.prepare("UPDATE users SET balance_cents = balance_cents + ?, last_bailout = ? WHERE id = ?").bind(BAILOUT_CENTS, now, u.id),
-    c.env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'bailout', ?, 'SAL SPOTS YOU A TWENTY', ?)").bind(u.id, BAILOUT_CENTS, now),
+    c.env.DB.prepare("INSERT INTO ledger (user_id, kind, cents, memo, created_at) VALUES (?, 'bailout', ?, 'TONY SPOTS YOU A TWENTY', ?)").bind(u.id, BAILOUT_CENTS, now),
   ]);
   return c.json({ ok: true });
 });
@@ -201,7 +238,7 @@ app.post("/bailout", async (c) => {
 app.get("/leaderboard", async (c) => {
   const now = Date.now();
   const [users, pos, van] = await Promise.all([
-    c.env.DB.prepare("SELECT id, username, hood, balance_cents, is_bot, is_sal FROM users").all<{ id: number; username: string; hood: string; balance_cents: number; is_bot: number; is_sal: number }>(),
+    c.env.DB.prepare("SELECT id, username, hood, balance_cents, is_bot, is_boss FROM users").all<{ id: number; username: string; hood: string; balance_cents: number; is_bot: number; is_boss: number }>(),
     c.env.DB.prepare(
       "SELECT p.user_id, p.outcome, p.shares, m.q, m.b FROM positions p JOIN markets m ON m.id = p.market_id WHERE m.status = 'open' AND p.shares > 0.000001",
     ).all<{ user_id: number; outcome: number; shares: number; q: string; b: number }>(),
@@ -214,14 +251,18 @@ app.get("/leaderboard", async (c) => {
     if (!priceCache.has(key)) priceCache.set(key, prices(JSON.parse(p.q), p.b));
     worth.set(p.user_id, (worth.get(p.user_id) ?? 0) + Math.round(p.shares * priceCache.get(key)![p.outcome] * 100));
   }
+  const marks = new Map<string, number>();
+  for (const sym of new Set(van.results.map((v) => v.symbol))) {
+    const ct = contract(sym);
+    if (ct && !ct.halted) marks.set(sym, await vanPrice(c.env, ct, now));
+  }
   for (const v of van.results) {
-    const ct = contract(v.symbol);
-    const mark = !ct || ct.halted ? v.entry_cents : vanPrice(ct, now);
+    const mark = marks.get(v.symbol) ?? v.entry_cents;
     worth.set(v.user_id, (worth.get(v.user_id) ?? 0) + boxCost(v.side, mark) * v.boxes);
   }
   const rows: LeaderRow[] = users.results
     .filter((u) => !u.is_bot)
-    .map((u) => ({ rank: 0, user: u.username, hood: u.hood, netWorthCents: worth.get(u.id) ?? 0, bot: false, isSal: !!u.is_sal }))
+    .map((u) => ({ rank: 0, user: u.username, hood: u.hood, netWorthCents: worth.get(u.id) ?? 0, bot: false, isBoss: !!u.is_boss }))
     .sort((a, b) => b.netWorthCents - a.netWorthCents)
     .slice(0, 50)
     .map((r, i) => ({ ...r, rank: i + 1 }));
@@ -255,10 +296,10 @@ app.get("/ticker", async (c) => {
   return c.json({ items: mixed });
 });
 
-// ---------- Sal's office ----------
+// ---------- Tony's office ----------
 
-app.post("/sal/markets", async (c) => {
-  requireSal(c.get("user"));
+app.post("/boss/markets", async (c) => {
+  requireBoss(c.get("user"));
   const b = await body<{ title: string; blurb?: string; category: string; outcomes?: string[]; days?: number; rules?: [string, string][] }>(c);
   const title = (b.title ?? "").trim();
   if (title.length < 8) throw new HttpError(400, "Give it a real question.");
@@ -271,13 +312,13 @@ app.post("/sal/markets", async (c) => {
   await c.env.DB.prepare(
     "INSERT INTO markets (slug, kind, category, title, blurb, rules, outcomes, q, q0, b, closes_at, created_at) VALUES (?, 'lmsr', ?, ?, ?, ?, ?, ?, ?, 80, ?, ?)",
   )
-    .bind(slug, b.category, title, (b.blurb ?? "").trim(), JSON.stringify(b.rules ?? [["Resolved by", "Sal, who will be standing right there."]]), JSON.stringify(outcomes), q, q, now + Math.max(1, Math.min(90, b.days ?? 7)) * DAY, now)
+    .bind(slug, b.category, title, (b.blurb ?? "").trim(), JSON.stringify(b.rules ?? [["Resolved by", "Tony, who will be standing right there."]]), JSON.stringify(outcomes), q, q, now + Math.max(1, Math.min(90, b.days ?? 7)) * DAY, now)
     .run();
   return c.json({ slug });
 });
 
-app.post("/sal/markets/:slug/resolve", async (c) => {
-  requireSal(c.get("user"));
+app.post("/boss/markets/:slug/resolve", async (c) => {
+  requireBoss(c.get("user"));
   const b = await body<{ winner: number }>(c);
   const m: MarketRow = await getMarket(c.env, c.req.param("slug"));
   if (m.kind !== "lmsr") throw new HttpError(400, "Toss rounds resolve themselves.");

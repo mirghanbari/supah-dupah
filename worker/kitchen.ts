@@ -39,7 +39,7 @@ export async function ensureRound(env: Env, round: number) {
         ["What's a toss", "The dough leaves both hands and comes back down. Knuckle spins don't count."],
         ["Ceiling contact", "Toss counts. He gets yelled at. Both are final."],
         ["Floor pie", "Dropped dough ends the round at the current count."],
-        ["Resolved by", "Sal, standing right there."],
+        ["Resolved by", "Tony, standing right there."],
       ]),
       JSON.stringify([`OVER ${line}`, `UNDER ${line}`]),
       q, q, TOSS_B, start + BET_MS, round, start,
@@ -65,9 +65,13 @@ export async function settleDueRounds(env: Env, now: number) {
 
 export async function kitchenState(env: Env, user: UserRow | null, now: number): Promise<KitchenState> {
   const round = roundNow(now);
-  await ensureRound(env, round);
-  await settleDueRounds(env, now);
-  const m = (await env.DB.prepare("SELECT * FROM markets WHERE round_no = ?").bind(round).first<MarketRow>())!;
+  // Reads only, unless this is the first request of a new round.
+  let m = await env.DB.prepare("SELECT * FROM markets WHERE round_no = ?").bind(round).first<MarketRow>();
+  if (!m) {
+    await ensureRound(env, round);
+    await settleDueRounds(env, now);
+    m = (await env.DB.prepare("SELECT * FROM markets WHERE round_no = ?").bind(round).first<MarketRow>())!;
+  }
   const t = tosserForRound(round);
   const showing = now >= m.closes_at!;
   const [trades, mine, recent] = await Promise.all([

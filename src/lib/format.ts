@@ -1,3 +1,5 @@
+import { shopNow } from "./clock";
+
 export const money = (cents: number) => {
   const sign = cents < 0 ? "−" : "";
   return `${sign}$${(Math.abs(cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -17,7 +19,7 @@ export const vol = (c: number) => {
 
 export const shares = (s: number) => (s >= 100 ? s.toFixed(0) : s.toFixed(1));
 
-export function ago(at: number, now = Date.now()) {
+export function ago(at: number, now = shopNow()) {
   const s = Math.max(0, Math.round((now - at) / 1000));
   if (s < 60) return `${s}s`;
   if (s < 3600) return `${Math.floor(s / 60)}m`;
@@ -25,7 +27,7 @@ export function ago(at: number, now = Date.now()) {
   return `${Math.floor(s / 86400)}d`;
 }
 
-export function until(at: number, now = Date.now()) {
+export function until(at: number, now = shopNow()) {
   const s = Math.max(0, Math.round((at - now) / 1000));
   if (s < 3600) return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;

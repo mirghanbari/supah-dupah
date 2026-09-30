@@ -8,22 +8,22 @@ import { sound } from "../lib/sound";
 
 const CATS = ["hood", "truck", "crust", "block", "weather"] as const;
 
-export function Sal() {
+export function Office() {
   const me = useMe();
   const { data } = useMarkets();
   const [f, setF] = useState({ title: "", blurb: "", category: "hood", outcomes: "YES\nNO", days: 7 });
   const [err, setErr] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ slug: string; winner: number } | null>(null);
-  const create = useMoneyMutation(() => api.salCreate({ ...f, outcomes: f.outcomes.split("\n").map((o) => o.trim()).filter(Boolean) }));
-  const resolve = useMoneyMutation((a: { slug: string; winner: number }) => api.salResolve(a.slug, a.winner));
+  const create = useMoneyMutation(() => api.bossCreate({ ...f, outcomes: f.outcomes.split("\n").map((o) => o.trim()).filter(Boolean) }));
+  const resolve = useMoneyMutation((a: { slug: string; winner: number }) => api.bossResolve(a.slug, a.winner));
 
-  if (me && !me.isSal) return <Navigate to="/" replace />;
-  if (!me) return <p className="font-hand text-lg">Only Sal gets in here.</p>;
+  if (me && !me.isBoss) return <Navigate to="/" replace />;
+  if (!me) return <p className="font-hand text-lg">Only Tony gets in here.</p>;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
       <section className="plate grid gap-3 p-5">
-        <h1 className="font-slab text-2xl">Sal's Office</h1>
+        <h1 className="font-slab text-2xl">Tony's Office</h1>
         <p className="text-sm text-ink-soft">Put a new special on the board.</p>
         <form
           className="grid gap-3"

@@ -37,11 +37,16 @@ const TOSS_CHATTER = [
 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 const dollars = (lo: number, hi: number) => Math.round((lo + Math.random() * (hi - lo)) * 100);
 
+let lastSeenTick = 0;
+
 export async function maybeTick(env: Env, now: number) {
+  if (now - lastSeenTick < TICK_MS) return; // this isolate knows it's too soon; skip the read
   const last = await env.DB.prepare("SELECT value FROM meta WHERE key = 'last_tick'").first<string>("value");
+  lastSeenTick = Number(last ?? 0);
   if (last == null || now - Number(last) < TICK_MS) return;
   const claimed = await env.DB.prepare("UPDATE meta SET value = ? WHERE key = 'last_tick' AND value = ?").bind(String(now), last).run();
   if (!claimed.meta.changes) return;
+  lastSeenTick = now;
   await tick(env, now);
 }
 
@@ -51,7 +56,7 @@ export async function tick(env: Env, now: number) {
   await settleDueRounds(env, now);
 
   const bots = (
-    await env.DB.prepare("SELECT id, username, balance_cents, is_sal, is_bot, hood, last_bailout FROM users WHERE is_bot = 1").all<UserRow>()
+    await env.DB.prepare("SELECT id, username, balance_cents, is_boss, is_bot, hood, last_bailout FROM users WHERE is_bot = 1").all<UserRow>()
   ).results;
   if (!bots.length) return;
   await env.DB.prepare("UPDATE users SET balance_cents = 500000 WHERE is_bot = 1 AND balance_cents < 50000").run();

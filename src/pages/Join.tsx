@@ -30,7 +30,7 @@ export function Join() {
       if (mode === "join") {
         fx.confetti();
         fx.stamp("WELCOME!", "good", "+$100.00");
-        sound.say("Ayyy! Welcome to Supah Dupah! Here's a C-note from Sal.");
+        sound.say("Ayyy! Welcome to Supah Dupah! Here's a C-note from Tony.");
         sound.jingle();
       } else sound.say("Ayyy! Look who's back!");
       nav("/");
@@ -48,7 +48,7 @@ export function Join() {
   const steps = [
     {
       title: "Before we let you in the back…",
-      sub: "Federal law doesn't require this. Sal does.",
+      sub: "Federal law doesn't require this. Tony does.",
       body: (
         <>
           <Field id="sentBy" label="Who sent you?">
@@ -94,7 +94,7 @@ export function Join() {
           <Field id="password" label="Password (6+)">
             <input id="password" type="password" className="field" autoComplete="new-password" value={f.password} onChange={set("password")} />
           </Field>
-          <p className="rounded bg-cheese/25 p-2 text-xs">Sal starts everybody with a C-note ($100) in store credit. It's play money. You can't spend it anywhere, including here, on pizza.</p>
+          <p className="rounded bg-cheese/25 p-2 text-xs">Tony starts everybody with a C-note ($100) in store credit. It's play money. You can't spend it anywhere, including here, on pizza.</p>
         </>
       ),
     },
@@ -151,7 +151,7 @@ export function Join() {
             </button>
           )}
           <button className="btn btn-red flex-1 text-lg" disabled={busy}>
-            {step < steps.length - 1 ? "Keep Goin' →" : busy ? "Checkin' wit' Sal…" : "I Know A Guy →"}
+            {step < steps.length - 1 ? "Keep Goin' →" : busy ? "Checkin' wit' Tony…" : "I Know A Guy →"}
           </button>
         </div>
       </form>

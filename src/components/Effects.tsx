@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { useMe } from "../lib/api";
+import { api, useMe } from "../lib/api";
 import { money } from "../lib/format";
 import { fx, useFx } from "../lib/fx";
 import { sound } from "../lib/sound";
@@ -82,28 +82,38 @@ function Confetti({ burst }: { burst: number }) {
 /** Watches the ledger for payouts and losses and throws a party (or doesn't). */
 function useLedgerWatcher() {
   const me = useMe();
-  const seen = useRef<number | null>(null);
+  const seen = useRef<{ user: number; id: number } | null>(null);
+  const userId = me?.id;
+  const lastId = me?.lastLedger?.id ?? 0;
   useEffect(() => {
-    const last = me?.lastLedger;
-    if (!last) return;
-    if (seen.current == null) {
-      seen.current = last.id;
+    if (userId == null) {
+      seen.current = null;
       return;
     }
-    if (last.id === seen.current) return;
-    seen.current = last.id;
-    if (last.kind === "payout") {
-      fx.confetti();
-      fx.stamp("BADA BING!", "good", `+${money(last.cents)}`);
-      sound.win(last.cents);
-      fx.page(`YOU WON ${money(last.cents)} · ${last.memo.replace(/^WON /, "")}`, "good");
-    } else if (last.kind === "loss") {
-      sound.aww();
-      fx.page(`${last.memo} · ${money(-last.cents)} DOWN DA DRAIN`, "bad");
-    } else if (last.kind === "bailout") {
-      fx.page("SAL SPOTTED YOU A TWENTY. DON'T TELL NOBODY.", "good");
+    // first look at this user (fresh load or someone else just signed in): nothing to celebrate yet
+    if (!seen.current || seen.current.user !== userId) {
+      seen.current = { user: userId, id: lastId };
+      return;
     }
-  }, [me?.lastLedger]);
+    if (lastId <= seen.current.id) return;
+    const after = seen.current.id;
+    seen.current = { user: userId, id: lastId };
+    void api.ledgerAfter(after).then(({ entries }) => {
+      const wins = entries.filter((e) => e.kind === "payout");
+      const losses = entries.filter((e) => e.kind === "loss");
+      if (wins.length) {
+        const total = wins.reduce((s, e) => s + e.cents, 0);
+        fx.confetti();
+        fx.stamp("BADA BING!", "good", `+${money(total)}`);
+        sound.win(total);
+        for (const w of wins.slice(0, 3)) fx.page(`YOU WON ${money(w.cents)} · ${w.memo.replace(/^WON /, "")}`, "good");
+      } else if (losses.length) {
+        sound.aww();
+      }
+      for (const l of losses.slice(0, 3)) fx.page(`${l.memo} · ${money(-l.cents)} DOWN DA DRAIN`, "bad");
+      if (entries.some((e) => e.kind === "bailout")) fx.page("TONY SPOTTED YOU A TWENTY. DON'T TELL NOBODY.", "good");
+    });
+  }, [userId, lastId]);
 }
 
 /** Type "ayyy" anywhere. */

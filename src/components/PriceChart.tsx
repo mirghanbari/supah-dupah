@@ -1,3 +1,4 @@
+import { shopNow } from "../lib/clock";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 
@@ -6,7 +7,7 @@ const LINE = ["#0B7A3B", "#C8102E", "#1F3FA0", "#C98A3E", "#1D1A17", "#8E0B20", 
 type Pt = { at: number; prices: number[] };
 
 /** Step chart of every outcome's price, drawn on a greasy paper plate. */
-export function PriceChart({ history, outcomes, now = Date.now() }: { history: Pt[]; outcomes: string[]; now?: number }) {
+export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt[]; outcomes: string[]; now?: number }) {
   const [range, setRange] = useState<"1h" | "1d" | "all">("all");
   const W = 640;
   const H = 240;
