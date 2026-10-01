@@ -58,11 +58,11 @@ export function YesNo({ m, onPick }: { m: MarketSummary; onPick?: (i: number) =>
 export function MarketCard({ m, i = 0 }: { m: MarketSummary; i?: number }) {
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24, rotate: i % 2 ? 1.5 : -1.5 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
-      whileHover={{ rotate: i % 2 ? -0.8 : 0.8, y: -3 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20, delay: Math.min(i, 10) * 0.035 }}
-      className={`plate ${i % 3 !== 1 ? "greasy" : ""} grid grid-rows-[auto_1fr_auto_auto] gap-2.5 p-4`}
+      className="plate grid grid-rows-[auto_1fr_auto_auto] gap-3 p-5"
     >
       <div className="flex items-center justify-between gap-2">
         <CategoryPill c={m.category} />

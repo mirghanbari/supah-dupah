@@ -19,10 +19,9 @@ function LiveTossCard() {
   const last = data.recent[0];
   return (
     <article className="plate greasy grid gap-3.5 p-5">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="pill bg-sauce text-plate">● Live from da back</span>
-        <span className="pill bg-basil text-plate">Crust Sports</span>
-        <span className="pill bg-tile text-ink-soft">Round #{r.round % 10000}</span>
+        <span className="label text-ink-soft">Round #{r.round % 10000}</span>
       </div>
       <h2 className="font-slab text-[clamp(22px,2.6vw,30px)] leading-tight">
         {r.tosser.name} "{r.tosser.nick}": over or under {r.line} tosses?
@@ -66,13 +65,13 @@ export function Lobby() {
   const shown = cat === "all" ? markets : markets.filter((m) => m.category === cat);
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-12">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <LiveTossCard />
         {featured.length > 0 ? <Letterboard markets={featured} /> : <div className="letterboard min-h-64" />}
       </div>
 
-      <section className="grid gap-4">
+      <section className="grid gap-5">
         <SectionHead title="Fresh Out Da Oven" aside="every market we got. still hot, don't touch." />
         <div className="flex flex-wrap gap-2">
           {CATS.map((c) => (
@@ -88,7 +87,7 @@ export function Lobby() {
             </button>
           ))}
         </div>
-        <motion.div layout className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((m, i) => (
             <MarketCard key={m.slug} m={m} i={i} />
           ))}

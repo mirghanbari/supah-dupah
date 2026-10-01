@@ -63,8 +63,8 @@ label,
   .tiles {
     background-color: var(--color-tile);
     background-image:
-      linear-gradient(var(--color-grout) 2px, transparent 2px),
-      linear-gradient(90deg, var(--color-grout) 2px, transparent 2px);
+      linear-gradient(rgb(0 0 0 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(0 0 0 / 0.035) 1px, transparent 1px);
     background-size: 72px 36px;
   }
 
@@ -89,7 +89,7 @@ label,
     content: "";
     position: absolute;
     border-radius: 50%;
-    background: rgb(201 138 62 / 0.16);
+    background: rgb(201 138 62 / 0.08);
     pointer-events: none;
   }
   .plate.greasy::before {
@@ -122,8 +122,7 @@ label,
     text-shadow:
       0 0 4px #fff,
       0 0 10px var(--color-neon),
-      0 0 22px var(--color-neon),
-      0 0 40px var(--color-neon);
+      0 0 18px var(--color-neon);
   }
   .neon-open {
     font-family: var(--font-slab);
@@ -135,7 +134,7 @@ label,
       0 0 10px #29ff8a,
       inset 0 0 10px #29ff8a;
     text-shadow: 0 0 8px #29ff8a;
-    animation: flicker 5s infinite;
+    animation: flicker 12s infinite;
   }
 
   .led {
@@ -364,10 +363,10 @@ label,
   filter: drop-shadow(0 8px 0 rgb(0 0 0 / 0.25));
 }
 .sd-logo .sd-sticker {
-  animation: sd-wobble 2.4s ease-in-out infinite;
+  animation: sd-wobble 5s ease-in-out infinite;
 }
 .sd-logo .sd-steam path {
-  animation: steam 2.2s ease-in-out infinite;
+  animation: steam 3.5s ease-in-out infinite;
 }
 .sd-logo .sd-steam path:nth-child(2) {
   animation-delay: 0.5s;
@@ -377,15 +376,15 @@ label,
 }
 .sd-logo .sd-chef {
   transform-origin: 190px 330px;
-  animation: bob 3s ease-in-out infinite;
+  animation: bob 6s ease-in-out infinite;
 }
 @keyframes sd-wobble {
   0%,
   100% {
-    transform: translate(800px, 78px) rotate(-8deg) scale(1);
+    transform: translate(800px, 78px) rotate(-5deg) scale(1);
   }
   50% {
-    transform: translate(800px, 78px) rotate(8deg) scale(1.08);
+    transform: translate(800px, 78px) rotate(5deg) scale(1.03);
   }
 }
 

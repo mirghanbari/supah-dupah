@@ -73,6 +73,20 @@ export function SoundControls() {
   );
 }
 
+/** Desktop: one small chip that opens the full sound panel, so the counter stays clear. */
+function SoundMenu() {
+  useSound();
+  const label = !sound.enabled ? "🔇 Sound off" : sound.jukebox ? "🔊 ♫ Jukebox playin'" : "🔊 Sound on";
+  return (
+    <details className="relative">
+      <summary className="label list-none rounded border-2 border-plate/40 px-2 py-1 text-plate/80 hover:text-plate">{label} ▾</summary>
+      <div className="absolute right-0 z-30 mt-1 w-max rounded bg-felt p-2.5 shadow-xl">
+        <SoundControls />
+      </div>
+    </details>
+  );
+}
+
 /** A little hero sandwich. The top bun lifts when the menu's open. */
 function SandwichIcon({ open }: { open: boolean }) {
   return (
@@ -295,9 +309,6 @@ export function Storefront() {
             {me ? (
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <Credit cents={me.balanceCents} />
-                <button className="btn btn-cheese text-sm" onClick={deposit}>
-                  Deposit (Cash Only)
-                </button>
                 <details className="relative">
                   <summary className="label list-none rounded border-2 border-plate/50 px-2 py-1.5 text-plate">
                     {me.username} ▾
@@ -306,6 +317,9 @@ export function Storefront() {
                     <Link className="label rounded px-2 py-1.5 text-sm hover:bg-tile" to="/tab">
                       Your Tab
                     </Link>
+                    <button className="label rounded px-2 py-1.5 text-left text-sm hover:bg-tile" onClick={deposit}>
+                      Deposit (Cash Only)
+                    </button>
                     {me.isBoss && (
                       <Link className="label rounded px-2 py-1.5 text-sm hover:bg-tile" to="/office">
                         Tony's Office
@@ -327,7 +341,7 @@ export function Storefront() {
                 </Link>
               </div>
             )}
-            <SoundControls />
+            <SoundMenu />
           </div>
         </div>
         <nav className="hidden gap-1 overflow-x-auto bg-basil px-3 md:flex" aria-label="Sections">

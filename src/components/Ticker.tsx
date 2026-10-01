@@ -17,12 +17,11 @@ export function Ticker() {
           {it.text}
         </span>
       ))}
-      <span className="text-plate/60">★ IF YOU AIN'T SUPAH, YOU AIN'T DUPAH! ★</span>
     </span>
   );
   return (
     <div className="overflow-hidden whitespace-nowrap border-b-2 border-[#332] bg-black py-[3px] font-led text-xl text-led" aria-label="Price ticker">
-      <div className="inline-flex w-max hover:[animation-play-state:paused]" style={{ animation: `marquee ${Math.max(40, items.length * 5)}s linear infinite` }}>
+      <div className="inline-flex w-max hover:[animation-play-state:paused]" style={{ animation: `marquee ${Math.max(60, items.length * 7)}s linear infinite` }}>
         {row}
         <span aria-hidden="true" className="inline-flex">
           {row}
