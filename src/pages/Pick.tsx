@@ -14,31 +14,29 @@ const MAX_BET = 100;
 
 type Phase = "idle" | "rolling" | "done";
 
-/** The red deli "NOW SERVING" sign. Shows Tony's number. */
+/** The "Now serving" display. Shows Tony's number. */
 function NowServing({ value, phase, result }: { value: number | null; phase: Phase; result: PickResult | null }) {
-  const glow = phase === "done" && result ? (result.win ? "#7CFF6B" : "#FF3B3B") : "#FF3B3B";
+  const color = phase === "done" && result ? (result.win ? "#45D49A" : "#FF7A5E") : "#FFFFFF";
   return (
-    <div className="mx-auto w-full max-w-sm rounded-xl border-[6px] border-[#8E0B20] bg-sauce p-3 shadow-[0_14px_0_-4px_#5a0613,0_24px_40px_rgba(0,0,0,.35)]">
-      <div className="text-center font-slab text-lg tracking-widest text-plate">NOW SERVING</div>
-      <div className="mt-2 rounded-md bg-[#140404] px-4 py-3 shadow-[inset_0_4px_12px_rgba(0,0,0,.8)]">
-        <motion.div
-          key={phase === "done" ? `done-${value}` : "roll"}
-          initial={phase === "done" ? { scale: 1.5 } : false}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 500, damping: 14 }}
-          className="text-center font-led text-[clamp(96px,26vw,150px)] leading-[.8] tabular-nums"
-          style={{ color: glow, textShadow: `0 0 12px ${glow}, 0 0 28px ${glow}` }}
-          aria-live="polite"
-        >
-          {value == null ? "--" : String(value).padStart(2, "0")}
-        </motion.div>
-      </div>
-      <div className="mt-2 text-center font-board text-[11px] uppercase tracking-[.2em] text-plate/80">Please have your ticket ready</div>
+    <div className="mx-auto w-full max-w-xs rounded-3xl bg-felt px-5 py-3.5 text-center text-white">
+      <div className="text-[13px] font-bold tracking-[.2em] text-white/70">NOW SERVING</div>
+      <motion.div
+        key={phase === "done" ? `done-${value}` : "roll"}
+        initial={phase === "done" ? { scale: 1.3 } : false}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 500, damping: 16 }}
+        className="font-led text-[clamp(64px,16vw,88px)] leading-none"
+        style={{ color, transition: "color .3s" }}
+        aria-live="polite"
+      >
+        {value == null ? "--" : String(value).padStart(2, "0")}
+      </motion.div>
+      <div className="text-[11px] text-white/60">Please have your ticket ready</div>
     </div>
   );
 }
 
-/** A tear-off deli ticket. */
+/** One number to pick. */
 function Ticket({ n, picked, disabled, onPick }: { n: number; picked: boolean; disabled: boolean; onPick: () => void }) {
   return (
     <motion.button
@@ -47,20 +45,14 @@ function Ticket({ n, picked, disabled, onPick }: { n: number; picked: boolean; d
       onClick={onPick}
       aria-pressed={picked}
       aria-label={`Pick ${n}`}
-      animate={picked ? { y: -10, rotate: -4, scale: 1.08 } : { y: 0, rotate: 0, scale: 1 }}
-      whileHover={disabled ? undefined : { y: picked ? -10 : -4 }}
-      whileTap={disabled ? undefined : { scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 420, damping: 18 }}
-      className={`relative grid aspect-[3/4] place-items-center rounded-sm border-2 border-dashed font-slab text-[clamp(28px,7vw,44px)] shadow-md disabled:cursor-not-allowed ${
-        picked ? "border-plate bg-sauce text-plate" : "border-sauce/50 bg-[#FFF3D6] text-sauce"
+      animate={picked ? { y: -4, scale: 1.04 } : { y: 0, scale: 1 }}
+      whileTap={disabled ? undefined : { scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 420, damping: 22 }}
+      className={`grid h-14 place-items-center rounded-2xl border font-slab text-2xl transition-colors disabled:cursor-not-allowed ${
+        picked ? "border-sauce bg-sauce text-white" : "border-grout bg-plate text-ink hover:border-ink-soft"
       }`}
-      style={{
-        WebkitMask: "radial-gradient(circle at 50% 0, transparent 7px, #000 7.5px) top / 100% 51% no-repeat, radial-gradient(circle at 50% 100%, transparent 7px, #000 7.5px) bottom / 100% 51% no-repeat",
-        mask: "radial-gradient(circle at 50% 0, transparent 7px, #000 7.5px) top / 100% 51% no-repeat, radial-gradient(circle at 50% 100%, transparent 7px, #000 7.5px) bottom / 100% 51% no-repeat",
-      }}
     >
       {n}
-      <span className={`absolute bottom-2 font-board text-[9px] tracking-widest ${picked ? "text-plate/80" : "text-sauce/60"}`}>TAKE ONE</span>
     </motion.button>
   );
 }
@@ -151,15 +143,15 @@ export function Pick() {
   const headline = result ? (result.win ? "WE GOT A WINNER!" : result.close ? "Oh, So Close." : "You Gotta Pay to Play.") : null;
 
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="grid gap-6">
-        <header className="plate greasy relative grid gap-2 p-5 text-center">
-          <p className="label text-basil">Tony's Famous</p>
-          <h1 className="font-neon text-[clamp(44px,8vw,72px)] leading-none text-sauce drop-shadow-[3px_3px_0_var(--color-cheese)]">Pick A Number</h1>
-          <p className="mx-auto max-w-[46ch] text-ink-soft">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-4">
+        <header className="plate relative grid gap-1.5 px-5 py-4 text-center">
+          <p className="label text-sauce">Tony's Famous</p>
+          <h1 className="font-slab text-[clamp(28px,4vw,38px)] leading-none">Pick A Number</h1>
+          <p className="mx-auto max-w-[52ch] text-sm text-ink-soft">
             Pick a number, 1 to 10. If it matches Tony's number, you get paid <b className="text-ink">100 times</b> your bet.
           </p>
-          <p className="mx-auto max-w-[52ch] rotate-[-1deg] font-hand text-xs text-sauce">
+          <p className="mx-auto max-w-[52ch] text-xs text-ink-soft">
             *Tony's number is 1 to 10. Your odds of winning are 1 in 100. Don't ask how. It's in the fine print. This is the fine print.
           </p>
         </header>
@@ -173,10 +165,10 @@ export function Pick() {
               initial={{ opacity: 0, y: 16, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0 }}
-              className={`plate grid gap-1 p-4 text-center ${result.win ? "ring-4 ring-basil" : result.close ? "ring-4 ring-cheese" : ""}`}
+              className={`plate grid gap-1 p-4 text-center ${result.win ? "ring-4 ring-basil" : result.close ? "ring-4 ring-cheese/50" : ""}`}
             >
-              <div className={`font-slab text-[clamp(26px,5vw,40px)] leading-tight ${result.win ? "text-basil" : result.close ? "text-[#B07A00]" : "text-sauce"}`}>{headline}</div>
-              <div className="font-board uppercase tracking-wider text-ink-soft">
+              <div className={`font-slab text-[clamp(22px,3.5vw,30px)] leading-tight ${result.win ? "text-basil" : result.close ? "text-cheese" : "text-sauce"}`}>{headline}</div>
+              <div className="text-ink-soft">
                 You took <b className="text-ink">#{result.pick}</b> · Tony drew <b className="text-ink">#{result.draw}</b>
                 {!result.win && <> · off by {Math.abs(result.draw - result.pick)}</>}
               </div>
@@ -186,8 +178,8 @@ export function Pick() {
         </AnimatePresence>
 
         <section className="plate grid gap-4 p-5">
-          <SectionHead title="Take A Ticket" aside={pick ? `you're holdin' #${pick}` : "pick one, any one"} />
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+          <SectionHead title="Pick your number" aside={pick ? `you're holdin' #${pick}` : "pick one, any one"} />
+          <div className="grid grid-cols-5 gap-2">
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
               <Ticket
                 key={n}
@@ -213,13 +205,13 @@ export function Pick() {
                   <input
                     id="pick-bet"
                     inputMode="decimal"
-                    className="field w-28 font-led text-2xl"
+                    className="field w-28 text-lg font-bold tabular-nums"
                     value={amount}
                     disabled={busy}
                     onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
                   />
                   {[1, 5, 20, 100].map((d) => (
-                    <button key={d} type="button" disabled={busy} onClick={() => setAmount(String(d))} className="label rounded border-2 border-ink/20 px-2.5 py-1.5 hover:border-ink">
+                    <button key={d} type="button" disabled={busy} onClick={() => setAmount(String(d))} className="h-11 rounded-xl border border-grout px-3 font-semibold hover:bg-tile">
                       ${d}
                     </button>
                   ))}
@@ -232,20 +224,20 @@ export function Pick() {
                 type="button"
                 onClick={play}
                 disabled={pick == null || busy || cents < 1}
-                className="rounded bg-sauce px-6 py-4 font-slab text-xl tracking-wide text-plate shadow-[0_5px_0_var(--color-sauce-dk)] transition-transform active:translate-y-1 active:shadow-none disabled:opacity-50"
+                className="btn btn-red h-12 px-6 text-base"
               >
-                {busy ? "Drawin'…" : pick == null ? "Pick a ticket first" : "TAKE A NUMBER"}
+                {busy ? "Drawin'…" : pick == null ? "Pick a number first" : "Take a number"}
               </button>
             </div>
           ) : (
             <div className="grid gap-2 text-center">
-              <span className="font-hand text-lg text-sauce">We don't take strangers' numbers.</span>
+              <span className="font-semibold">Sign up to take a number. It's free, and it's fake money.</span>
               <Link to="/join" className="btn btn-red justify-self-center">
-                I Know A Guy →
+                Join free
               </Link>
             </div>
           )}
-          {err && <p className="rounded bg-sauce px-3 py-2 text-center font-hand text-plate">{err}</p>}
+          {err && <p className="rounded-xl bg-no-soft px-3 py-2 text-center font-semibold text-sauce">{err}</p>}
         </section>
       </div>
 
@@ -260,7 +252,7 @@ export function Pick() {
                 ["So close", String(board.mine.closeCalls)],
                 ["Net", signedMoney(board.mine.netCents)],
               ].map(([k, v]) => (
-                <div key={k} className="rounded bg-tile p-2">
+                <div key={k} className="rounded-xl bg-tile p-3">
                   <div className={`font-led text-3xl leading-none ${k === "Net" ? (board.mine!.netCents >= 0 ? "text-basil" : "text-sauce") : ""}`}>{v}</div>
                   <div className="label text-[10px] text-ink-soft">{k}</div>
                 </div>
@@ -270,14 +262,14 @@ export function Pick() {
         )}
 
         <section className="plate grid gap-2 p-4">
-          <h2 className="font-slab text-lg">Da Board</h2>
+          <h2 className="font-slab text-lg">Recent plays</h2>
           <p className="text-xs text-ink-soft">Every ticket, everybody. Tony's got nothin' to hide.</p>
           {(board?.recent ?? []).length === 0 && <p className="font-hand text-ink-soft">Nobody's taken a number yet.</p>}
           {(board?.recent ?? []).map((p, i) => {
             const win = p.payoutCents > 0;
             const close = !win && Math.abs(p.draw - p.pick) === 1;
             return (
-              <div key={i} className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-[13px] tabular-nums ${win ? "bg-[#E3F4EA]" : close ? "bg-cheese/20" : ""}`}>
+              <div key={i} className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-[13px] tabular-nums ${win ? "bg-yes-soft" : close ? "bg-cheese-soft" : ""}`}>
                 <span className="min-w-0 truncate">
                   <b>{p.user}</b> took #{p.pick}, Tony drew #{p.draw}
                 </span>

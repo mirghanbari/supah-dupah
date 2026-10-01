@@ -11,7 +11,7 @@ import { money, signedMoney } from "../lib/format";
 import { fx } from "../lib/fx";
 import { sound } from "../lib/sound";
 
-const HEAT = ["bg-[#DDF1E3] text-basil", "bg-[#FCE9B0] text-[#7A5600]", "bg-[#FFD9C7] text-[#A0300B]", "bg-sauce text-plate", "bg-felt text-cheese"];
+const HEAT = ["bg-yes-soft text-basil", "bg-cheese-soft text-cheese", "bg-no-soft text-sauce", "bg-sauce text-white", "bg-felt text-white"];
 
 function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
   const me = useMe();
@@ -23,14 +23,14 @@ function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
 
   return (
     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-      <div className="grid grid-cols-1 gap-3 border-t-2 border-dashed border-grout bg-tile p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="grid grid-cols-1 gap-3 border-t border-grout bg-tile p-4 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="grid gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {(["long", "short"] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setSide(s)}
-                className={`label rounded border-2 px-3 py-1.5 ${side === s ? (s === "long" ? "border-basil bg-basil text-plate" : "border-sauce bg-sauce text-plate") : "border-ink/30 bg-plate"}`}
+                className={`h-10 rounded-full border px-4 text-sm font-semibold ${side === s ? (s === "long" ? "border-basil bg-basil text-white" : "border-sauce bg-sauce text-white") : "border-grout bg-plate"}`}
               >
                 {s === "long" ? "Long (it's goin' up)" : "Short (it's garbage)"}
               </button>
@@ -47,10 +47,10 @@ function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
           <p className="text-xs text-ink-soft">
             {side === "long" ? `Pay ${row.price}¢ a box now, get the going price back when you close.` : `Pay ${100 - row.price}¢ a box now, get 100 minus the going price back when you close.`} Every point is a penny a box.
           </p>
-          {err && <p className="font-hand text-sauce">{err}</p>}
+          {err && <p className="text-sm font-semibold text-sauce">{err}</p>}
         </div>
         <div className="flex gap-2">
-          <button className="btn border-2 border-ink/20 bg-plate text-sm" onClick={onClose}>
+          <button className="btn btn-cheese text-sm" onClick={onClose}>
             Nah
           </button>
           {me ? (
@@ -75,7 +75,7 @@ function Ticket({ row, onClose }: { row: VanRow; onClose: () => void }) {
             </button>
           ) : (
             <Link to="/join" className="btn btn-red">
-              I Know A Guy →
+              Join free
             </Link>
           )}
         </div>
@@ -98,12 +98,12 @@ function FragmentRow({ row, open, onToggle }: { row: VanRow; open: boolean; onTo
         <td className="p-2.5 text-right font-led text-2xl">{row.halted ? "—" : row.boxes}</td>
         <td className="p-2.5 text-right font-led text-2xl">{row.halted ? "—" : row.guys}</td>
         <td className="p-2.5">
-          <span className={`pill rounded-sm ${row.halted ? HEAT[3] : HEAT[row.heat.level]}`}>{row.halted ?? row.heat.label}</span>
+          <span className={`pill ${row.halted ? HEAT[3] : HEAT[row.heat.level]}`}>{row.halted ?? row.heat.label}</span>
         </td>
         <td className="p-2.5">
           {!row.halted && (
             <button
-              className={`label rounded px-2.5 py-1.5 ${open ? "bg-ink text-plate" : "bg-basil text-plate"}`}
+              className={`h-9 rounded-full px-3.5 text-[13px] font-semibold ${open ? "bg-ink text-plate" : "bg-basil text-white"}`}
               onClick={() => {
                 sound.click();
                 onToggle();
@@ -136,9 +136,9 @@ export function Van() {
 
   return (
     <div className="grid gap-6">
-      <div className="plate flex flex-wrap items-end justify-between gap-4 p-5">
+      <div className="plate flex flex-wrap items-end justify-between gap-4 p-6">
         <div className="grid max-w-2xl gap-1.5">
-          <h1 className="font-slab text-[clamp(26px,3.4vw,40px)] leading-none text-sauce">Back of Da Van</h1>
+          <h1 className="font-slab text-[clamp(26px,3.4vw,40px)] leading-none">Back of the Van</h1>
           <p className="text-sm text-ink-soft">
             Futures on goods that fell off the truck. Contracts settle physically, at the back of a white van, 3rd &amp; Canal. Don't ask where it came from. Don't ask where it's going.
           </p>
@@ -147,18 +147,18 @@ export function Van() {
           key={String(doorsOpen)}
           initial={{ scale: 1.2 }}
           animate={{ scale: 1 }}
-          className={`rounded border-2 px-3 py-0.5 font-led text-xl ${doorsOpen ? "border-basil text-basil" : "border-sauce text-sauce"}`}
+          className={`rounded-full px-3.5 py-1.5 text-sm font-bold ${doorsOpen ? "bg-yes-soft text-basil" : "bg-no-soft text-sauce"}`}
         >
-          ● VAN DOORS: {doorsOpen ? "OPEN" : "SOMEBODY'S LOOKIN'"}
+          ● Van doors: {doorsOpen ? "open" : "somebody's lookin'"}
         </motion.span>
       </div>
 
       <div className="plate overflow-x-auto">
         <table className="w-full min-w-[860px] border-collapse tabular-nums">
           <thead>
-            <tr className="label border-b-2 border-ink text-left text-ink-soft">
+            <tr className="label border-b border-grout text-left text-ink-soft">
               <th className="p-2.5 font-normal">Contract</th>
-              <th className="p-2.5 font-normal">Da Goods</th>
+              <th className="p-2.5 font-normal">Goods</th>
               <th className="p-2.5 font-normal">2 hrs</th>
               <th className="p-2.5 text-right font-normal">Last</th>
               <th className="p-2.5 text-right font-normal">1h Chg</th>
@@ -174,7 +174,7 @@ export function Van() {
             ))}
           </tbody>
         </table>
-        {!data && <p className="p-6 font-hand text-ink-soft">Openin' da van…</p>}
+        {!data && <p className="p-6 text-ink-soft">Opening the van…</p>}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -184,7 +184,7 @@ export function Van() {
           ["Settlement", "Physical. Very physical."],
           ["Last trading day", "When da van leaves"],
         ].map(([k, v]) => (
-          <div key={k} className="grid gap-0.5 rounded border-2 border-dashed border-grout bg-plate px-3 py-2.5">
+          <div key={k} className="grid gap-0.5 rounded-2xl border border-grout bg-plate px-4 py-3">
             <span className="label text-[10px] text-ink-soft">{k}</span>
             <b className="text-sm font-medium">{v}</b>
           </div>
@@ -200,7 +200,7 @@ export function Van() {
                 <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, x: 120, rotate: 8 }} className="plate grid gap-2 p-4">
                   <div className="flex items-baseline justify-between">
                     <span className="font-led text-2xl text-sauce">{p.symbol}</span>
-                    <span className={`pill ${p.side === "long" ? "bg-basil text-plate" : "bg-sauce text-plate"}`}>
+                    <span className={`pill ${p.side === "long" ? "bg-basil text-white" : "bg-sauce text-white"}`}>
                       {p.side} {p.boxes} bx
                     </span>
                   </div>

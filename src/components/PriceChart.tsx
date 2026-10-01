@@ -2,11 +2,11 @@ import { shopNow } from "../lib/clock";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 
-const LINE = ["#0B7A3B", "#C8102E", "#1F3FA0", "#C98A3E", "#1D1A17", "#8E0B20", "#6b1fb1", "#0e7490"];
+const LINE = ["var(--color-basil)", "var(--color-sauce)", "var(--color-pen)", "var(--color-cheese)", "var(--color-ink)", "#8E5BD9", "#0E9AA7", "var(--color-crust)"];
 
 type Pt = { at: number; prices: number[] };
 
-/** Step chart of every outcome's price, drawn on a greasy paper plate. */
+/** Step chart of every outcome's price, drawn on a paper plate. */
 export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt[]; outcomes: string[]; now?: number }) {
   const [range, setRange] = useState<"1h" | "1d" | "all">("all");
   const W = 640;
@@ -25,7 +25,7 @@ export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt
     return out;
   }, [history, range, now]);
 
-  if (pts.length < 2) return <div className="p-6 text-center font-hand text-ink-soft">No trades yet. Be the first guy.</div>;
+  if (pts.length < 2) return <div className="p-6 text-center text-ink-soft">No trades yet. Be the first.</div>;
 
   const t0 = pts[0].at;
   const t1 = Math.max(pts[pts.length - 1].at, t0 + 1);
@@ -54,7 +54,7 @@ export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt
           {shown.map((i) => (
             <span key={i} className="flex items-center gap-1.5">
               <i className="inline-block h-1 w-4 rounded" style={{ background: LINE[i % LINE.length] }} />
-              {outcomes[i]} <b className="font-led text-base">{Math.round((last.prices[i] ?? 0) * 100)}¢</b>
+              {outcomes[i]} <b className="font-semibold tabular-nums">{Math.round((last.prices[i] ?? 0) * 100)}¢</b>
             </span>
           ))}
         </div>
@@ -63,9 +63,9 @@ export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`label rounded px-2 py-1 ${range === r ? "bg-ink text-plate" : "text-ink-soft hover:bg-tile"}`}
+              className={`label rounded-full px-3 py-1.5 ${range === r ? "bg-ink text-plate" : "text-ink-soft hover:bg-tile"}`}
             >
-              {r === "all" ? "All time (1994–)" : r}
+              {r === "all" ? "All" : r}
             </button>
           ))}
         </div>
@@ -74,19 +74,19 @@ export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt
         {[0.25, 0.5, 0.75].map((g) => (
           <g key={g}>
             <line x1={L} x2={W - R} y1={y(g)} y2={y(g)} stroke="var(--color-grout)" />
-            <text x={L - 8} y={y(g) + 5} textAnchor="end" fontFamily="VT323, monospace" fontSize="16" fill="var(--color-ink-soft)">
+            <text x={L - 8} y={y(g) + 5} textAnchor="end" fontFamily="DM Sans, sans-serif" fontSize="12" fill="var(--color-ink-soft)">
               {g * 100}¢
             </text>
           </g>
         ))}
-        <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} stroke="var(--color-ink)" strokeWidth="1.5" />
-        <text x={L} y={H - 6} fontFamily="VT323, monospace" fontSize="16" fill="var(--color-ink-soft)">
+        <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} stroke="var(--color-grout)" strokeWidth="1.5" />
+        <text x={L} y={H - 6} fontFamily="DM Sans, sans-serif" fontSize="12" fill="var(--color-ink-soft)">
           {fmt(t0)}
         </text>
-        <text x={W - R} y={H - 6} textAnchor="end" fontFamily="VT323, monospace" fontSize="16" fill="var(--color-ink-soft)">
+        <text x={W - R} y={H - 6} textAnchor="end" fontFamily="DM Sans, sans-serif" fontSize="12" fill="var(--color-ink-soft)">
           now
         </text>
-        {shown.length === 1 && <path d={`${series[0]}V${y(0)}H${L}Z`} fill="rgb(11 122 59 / .12)" />}
+        {shown.length === 1 && <path d={`${series[0]}V${y(0)}H${L}Z`} fill="var(--color-basil)" fillOpacity={0.12} />}
         {shown.map((i) => (
           <motion.path
             key={`${i}-${range}`}
@@ -101,7 +101,7 @@ export function PriceChart({ history, outcomes, now = shopNow() }: { history: Pt
           />
         ))}
         {shown.map((i) => (
-          <circle key={i} cx={x(last.at)} cy={y(last.prices[i] ?? 0)} r="5.5" fill={LINE[i % LINE.length]} stroke="#fff" strokeWidth="2" />
+          <circle key={i} cx={x(last.at)} cy={y(last.prices[i] ?? 0)} r="5.5" fill={LINE[i % LINE.length]} stroke="var(--color-plate)" strokeWidth="2" />
         ))}
       </svg>
     </div>
@@ -118,7 +118,7 @@ export function Sparkline({ data, w = 120, h = 32 }: { data: number[]; w?: numbe
   const color = up ? "var(--color-basil)" : "var(--color-sauce)";
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true">
-      <path d={`${d}L${w - 2},${h}L2,${h}Z`} fill={up ? "rgb(11 122 59 / .12)" : "rgb(200 16 46 / .1)"} />
+      <path d={`${d}L${w - 2},${h}L2,${h}Z`} fill={color} fillOpacity={0.12} />
       <path d={d} fill="none" stroke={color} strokeWidth="1.8" />
       <circle cx={w - 2} cy={h - 3 - ((data[data.length - 1] - lo) / span) * (h - 6)} r="2.5" fill={color} />
     </svg>

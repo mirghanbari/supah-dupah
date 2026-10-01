@@ -1,9 +1,9 @@
 export type Category = "truck" | "crust" | "hood" | "block" | "weather" | "toss";
 
 export const CATEGORY_LABEL: Record<Category, string> = {
-  truck: "Fell Off Da Truck",
+  truck: "Fell Off the Truck",
   crust: "Crust Sports",
-  hood: "Da Neighborhood",
+  hood: "Neighborhood",
   block: "Block Association",
   weather: "Weather (Inside)",
   toss: "Live Toss",

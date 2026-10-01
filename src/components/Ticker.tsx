@@ -1,15 +1,15 @@
 import { useTicker } from "../lib/api";
 
 const TONE = {
-  up: "text-up",
-  dn: "text-dn",
-  halt: "bg-sauce px-1 text-plate",
-  plain: "text-led",
+  up: "text-basil",
+  dn: "text-sauce",
+  halt: "rounded bg-sauce px-1.5 text-white",
+  plain: "text-ink-soft",
 };
 
 export function Ticker() {
   const { data } = useTicker();
-  const items = data?.items ?? [{ text: "OVEN'S WARMIN' UP · TICKER COMIN' RIGHT UP", tone: "plain" as const }];
+  const items = data?.items ?? [{ text: "Loading prices…", tone: "plain" as const }];
   const row = (
     <span className="inline-flex shrink-0 gap-8 pr-8">
       {items.map((it, i) => (
@@ -20,7 +20,7 @@ export function Ticker() {
     </span>
   );
   return (
-    <div className="overflow-hidden whitespace-nowrap border-b-2 border-[#332] bg-black py-[3px] font-led text-xl text-led" aria-label="Price ticker">
+    <div className="overflow-hidden whitespace-nowrap border-b border-grout bg-plate py-1.5 text-[13px] font-semibold tabular-nums" aria-label="Price ticker">
       <div className="inline-flex w-max hover:[animation-play-state:paused]" style={{ animation: `marquee ${Math.max(60, items.length * 7)}s linear infinite` }}>
         {row}
         <span aria-hidden="true" className="inline-flex">

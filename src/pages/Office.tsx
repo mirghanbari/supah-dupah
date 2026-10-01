@@ -66,7 +66,7 @@ export function Office() {
             <span className="label text-ink-soft">Closes in (days)</span>
             <input id="sal-days" type="number" min={1} max={90} className="field" value={f.days} onChange={(e) => setF({ ...f, days: Number(e.target.value) })} />
           </label>
-          {err && <p className="font-hand text-sauce">{err}</p>}
+          {err && <p className="text-sm font-semibold text-sauce">{err}</p>}
           <button className="btn btn-red" disabled={create.isPending}>
             Put It On Da Board
           </button>
@@ -87,7 +87,7 @@ export function Office() {
                 return (
                   <button
                     key={i}
-                    className={`label rounded px-2.5 py-1.5 ${armed ? "bg-sauce text-plate" : "bg-tile hover:bg-cheese/40"}`}
+                    className={`h-9 rounded-full px-3.5 text-[13px] font-semibold ${armed ? "bg-sauce text-white" : "bg-tile hover:bg-cheese-soft"}`}
                     disabled={resolve.isPending}
                     onClick={async () => {
                       if (!armed) return setConfirm({ slug: m.slug, winner: i });

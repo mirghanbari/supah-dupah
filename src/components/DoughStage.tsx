@@ -168,7 +168,7 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
   const handsUp = current?.kind === "toss" && el - current.t < 180;
 
   return (
-    <div className="relative overflow-hidden rounded-md border-4 border-felt bg-felt shadow-2xl">
+    <div className="relative overflow-hidden rounded-3xl border border-grout bg-felt">
       <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full select-none" role="img" aria-label={`Live dough toss: ${tosser.name}, ${count} tosses`}>
         <defs>
           <pattern id="stage-tile" width="48" height="24" patternUnits="userSpaceOnUse">
@@ -232,7 +232,7 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
             LINE {round.line}
           </text>
         </g>
-        <text x="560" y="120" fontFamily="Lobster, cursive" fontSize="46" fill="#FFE3EA" style={{ filter: "drop-shadow(0 0 6px #FF3B6B) drop-shadow(0 0 14px #FF3B6B)" }} className="[animation:flicker_4s_infinite]">
+        <text x="560" y="120" fontFamily="Bricolage Grotesque, sans-serif" fontWeight="800" fontSize="44" fill="#FFE3EA" style={{ filter: "drop-shadow(0 0 6px #FF3B6B) drop-shadow(0 0 14px #FF3B6B)" }} className="[animation:flicker_4s_infinite]">
           Live!
         </text>
 
@@ -324,8 +324,8 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
       {/* scoreboard */}
       <div className="absolute right-2 top-12 grid gap-1 text-right sm:right-4 sm:top-14">
         <div className="led px-3 pb-1 pt-0.5 text-center shadow-lg">
-          <div className="label text-[10px] text-[#b99a5a]">Tosses</div>
-          <motion.div key={count} initial={{ scale: 1.6, color: "#fff" }} animate={{ scale: 1, color: "#FFB000" }} className="text-6xl leading-[.8] sm:text-7xl">
+          <div className="label text-[10px] text-ink-soft">Tosses</div>
+          <motion.div key={count} initial={{ scale: 1.6 }} animate={{ scale: 1 }} className="text-6xl leading-[.8] sm:text-7xl">
             {String(count).padStart(2, "0")}
           </motion.div>
         </div>
@@ -339,7 +339,7 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
             key={secsLeft <= 10 ? secsLeft : "long"}
             initial={secsLeft <= 10 ? { scale: 1.4 } : false}
             animate={{ scale: 1 }}
-            className={`rounded-md border-4 px-5 py-2 text-center shadow-2xl ${secsLeft <= 10 ? "border-sauce bg-sauce text-plate" : "border-felt bg-plate/95 text-ink"}`}
+            className={`rounded-2xl border px-5 py-2.5 text-center shadow-2xl ${secsLeft <= 10 ? "border-sauce bg-sauce text-white" : "border-grout bg-plate/95 text-ink"}`}
           >
             <div className="label">Tossin' starts in</div>
             <div className="font-led text-6xl leading-none">
@@ -350,12 +350,12 @@ export function DoughStage({ round, clockOffset }: { round: RoundInfo; clockOffs
       )}
 
       {/* play-by-play */}
-      <div className="flex items-center gap-3 bg-felt px-3 py-2 text-plate">
-        <span className={`pill ${betting ? "bg-cheese text-ink" : done ? "bg-ink text-plate ring-1 ring-plate/40" : "bg-sauce text-plate"}`}>
+      <div className="flex items-center gap-3 bg-felt px-3 py-2 text-white">
+        <span className={`pill ${betting ? "bg-white text-[#17171c]" : done ? "bg-white/15 text-white" : "bg-sauce text-white"}`}>
           {betting ? "Takin' orders" : done ? "Final" : "● Live"}
         </span>
         <AnimatePresence mode="wait">
-          <motion.span key={call} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="min-w-0 truncate font-hand text-lg">
+          <motion.span key={call} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="min-w-0 truncate font-semibold">
             {call || " "}
           </motion.span>
         </AnimatePresence>

@@ -95,7 +95,7 @@ export function Join() {
           <Field id="password" label="Password (6+)">
             <input id="password" type="password" className="field" autoComplete="new-password" value={f.password} onChange={set("password")} />
           </Field>
-          <p className="rounded bg-cheese/25 p-2 text-xs">Tony starts everybody with a C-note ($100) in store credit. It's play money. You can't spend it anywhere, including here, on pizza.</p>
+          <p className="rounded-xl bg-cheese-soft p-3 text-[13px]">Tony starts everybody with a C-note ($100) in store credit. It's play money. You can't spend it anywhere, including here, on pizza.</p>
         </>
       ),
     },
@@ -117,8 +117,8 @@ export function Join() {
           <Field id="lp" label="Password">
             <input id="lp" type="password" className="field" autoComplete="current-password" value={f.password} onChange={set("password")} />
           </Field>
-          {err && <p className="rounded bg-sauce px-2 py-1.5 font-hand text-plate">{err}</p>}
-          <button className="btn btn-red text-lg" disabled={busy}>
+          {err && <p className="rounded-xl bg-no-soft px-3 py-2 font-semibold text-sauce">{err}</p>}
+          <button className="btn btn-red h-12 text-base" disabled={busy}>
             {busy ? "Checkin'…" : "Lemme In"}
           </button>
         </form>
@@ -144,14 +144,14 @@ export function Join() {
             {s.body}
           </motion.div>
         </AnimatePresence>
-        {err && <p className="rounded bg-sauce px-2 py-1.5 font-hand text-plate">{err}</p>}
+        {err && <p className="rounded-xl bg-no-soft px-3 py-2 font-semibold text-sauce">{err}</p>}
         <div className="flex gap-2">
           {step > 0 && (
-            <button type="button" className="btn border-2 border-ink/20 bg-plate" onClick={() => setStep(step - 1)}>
+            <button type="button" className="btn btn-cheese h-12" onClick={() => setStep(step - 1)}>
               ← Back
             </button>
           )}
-          <button className="btn btn-red flex-1 text-lg" disabled={busy}>
+          <button className="btn btn-red h-12 flex-1 text-base" disabled={busy}>
             {step < steps.length - 1 ? "Keep Goin' →" : busy ? "Checkin' wit' Tony…" : "I Know A Guy →"}
           </button>
         </div>
@@ -174,16 +174,19 @@ function Field({ id, label, children }: { id: string; label: string; children: R
 function Shell({ title, sub, children, onSwitch, switchLabel, step }: { title: string; sub: string; children: React.ReactNode; onSwitch: () => void; switchLabel: string; step?: number }) {
   return (
     <div className="mx-auto w-full max-w-md">
-      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="overflow-hidden rounded-2xl border-[10px] border-felt bg-tile shadow-2xl">
-        <div className="grid gap-0.5 bg-sauce px-5 py-3 text-plate">
-          <span className="font-neon text-3xl leading-none">Supah Dupah</span>
-          <span className="label text-plate/85">Know Your Cousin{step != null ? ` · Step ${step + 1} of 2` : ""}</span>
-        </div>
-        <div className="grid gap-4 p-5">
+      <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="plate rounded-3xl">
+        <div className="grid gap-5 p-6 sm:p-7">
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-[11px] bg-sauce font-slab text-[19px] text-white">S</span>
+              <span className="font-slab text-[21px] leading-none">supah dupah</span>
+            </span>
+            {step != null && <span className="label text-ink-soft">Step {step + 1} of 2</span>}
+          </div>
           {step != null && (
             <div className="flex gap-1">
               {[0, 1].map((i) => (
-                <i key={i} className={`h-1.5 flex-1 rounded ${i <= step ? "bg-sauce" : "bg-grout"}`} />
+                <i key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-sauce" : "bg-tile"}`} />
               ))}
             </div>
           )}
@@ -192,7 +195,7 @@ function Shell({ title, sub, children, onSwitch, switchLabel, step }: { title: s
             <p className="text-sm text-ink-soft">{sub}</p>
           </div>
           {children}
-          <button type="button" onClick={onSwitch} className="label justify-self-center text-basil hover:text-sauce">
+          <button type="button" onClick={onSwitch} className="justify-self-center text-sm font-semibold text-sauce hover:underline">
             {switchLabel}
           </button>
         </div>

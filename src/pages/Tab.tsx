@@ -20,21 +20,21 @@ export function Tab() {
   return (
     <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[400px_minmax(0,1fr)]">
       <motion.div initial={{ y: -40, opacity: 0, clipPath: "inset(0 0 100% 0)" }} animate={{ y: 0, opacity: 1, clipPath: "inset(0 0 0% 0)" }} transition={{ duration: 1.1, ease: "easeOut" }}>
-        <div className="receipt mx-auto grid max-w-[400px] gap-0.5 px-5 pb-7 pt-5 text-lg leading-snug text-[#222] shadow-xl">
-          <div className="text-center">
-            SUPAH DUPAH EXCH &amp; PIZZ
+        <div className="plate mx-auto grid max-w-[400px] gap-1 p-6 text-[15px] leading-snug tabular-nums">
+          <div className="text-center text-[13px] text-ink-soft">
+            <b className="font-slab text-lg text-ink">Statement</b>
             <br />
-            BENSONHURST, NY · EST. 1994
+            Supah Dupah · Est. 1994
             <br />
-            CHK #{String(me.id).padStart(6, "0")} · {now.toLocaleDateString()} {now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+            #{String(me.id).padStart(6, "0")} · {now.toLocaleDateString()} {now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
             <br />
-            GUEST: {me.username.toUpperCase()}
+            {me.username}
           </div>
-          <div className="my-1.5 border-t-2 border-dashed border-[#999]" />
-          {data.positions.length === 0 && data.van.length === 0 && <div className="text-center text-[#777]">NOTHIN' ON DA TAB</div>}
+          <div className="my-2 border-t border-grout" />
+          {data.positions.length === 0 && data.van.length === 0 && <div className="text-center text-ink-soft">Nothin' on your tab yet.</div>}
           {data.positions.map((p) => (
-            <Link key={`${p.slug}-${p.outcome}`} to={`/m/${p.slug}`} className="grid hover:bg-tile">
-              <span className="truncate">{p.title.toUpperCase()}</span>
+            <Link key={`${p.slug}-${p.outcome}`} to={`/m/${p.slug}`} className="grid rounded-lg px-1 py-0.5 hover:bg-tile">
+              <span className="truncate font-medium">{p.title}</span>
               <span className="flex justify-between gap-2 pl-3">
                 <span>
                   {shares(p.shares)} {p.outcome} @{Math.round(p.price * 100)}¢
@@ -44,35 +44,27 @@ export function Tab() {
             </Link>
           ))}
           {data.van.map((v) => (
-            <Link key={v.id} to="/van" className="flex justify-between gap-2 hover:bg-tile">
+            <Link key={v.id} to="/van" className="flex justify-between gap-2 rounded-lg px-1 py-0.5 hover:bg-tile">
               <span>
                 {v.side.toUpperCase()} {v.boxes}BX {v.symbol}
               </span>
               <span className={v.pnlCents >= 0 ? "text-basil" : "text-sauce"}>{signedMoney(v.pnlCents)}</span>
             </Link>
           ))}
-          <div className="my-1.5 border-t-2 border-dashed border-[#999]" />
+          <div className="my-2 border-t border-grout" />
           <div className="flex justify-between">
-            <span>STORE CREDIT</span>
+            <span className="text-ink-soft">Cash</span>
             <span>{money(data.balanceCents)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>COKE</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-2xl">
-            <b>NET WORTH</b>
+          <div className="flex justify-between font-slab text-xl">
+            <b>Net worth</b>
             <b>{money(data.netWorthCents)}</b>
           </div>
           <div className="flex justify-between">
-            <span>VS. TONY'S C-NOTE</span>
+            <span className="text-ink-soft">vs. your starting $100</span>
             <span className={pl >= 0 ? "text-basil" : "text-sauce"}>{signedMoney(pl)}</span>
           </div>
-          <div className="mt-3 text-center font-slab text-sm tracking-wider text-[#1b4fa0]">
-            WE ARE HAPPY
-            <br />
-            TO SERVE YOU
-          </div>
+          <div className="mt-3 text-center text-[13px] text-ink-soft">We are happy to serve you.</div>
         </div>
       </motion.div>
 
@@ -111,11 +103,11 @@ export function Tab() {
         </div>
 
         <section className="plate grid gap-2 p-5">
-          <h2 className="font-slab text-xl">Da Ledger</h2>
+          <h2 className="font-slab text-xl">Ledger</h2>
           {data.ledger.map((l, i) => (
             <div key={i} className="flex items-baseline justify-between gap-3 border-b border-grout py-1 text-sm">
               <span className="min-w-0">
-                <span className={`pill mr-2 ${l.kind === "payout" ? "bg-basil text-plate" : l.kind === "loss" ? "bg-sauce text-plate" : "bg-tile text-ink"}`}>{l.kind}</span>
+                <span className={`pill mr-2 ${l.kind === "payout" ? "bg-basil text-white" : l.kind === "loss" ? "bg-sauce text-white" : "bg-tile text-ink"}`}>{l.kind}</span>
                 {l.memo}
               </span>
               <span className={`shrink-0 font-led text-xl ${l.cents >= 0 ? "text-basil" : "text-sauce"}`}>{signedMoney(l.cents)}</span>

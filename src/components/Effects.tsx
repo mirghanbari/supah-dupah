@@ -5,7 +5,9 @@ import { money } from "../lib/format";
 import { fx, useFx } from "../lib/fx";
 import { sound } from "../lib/sound";
 
-/** Pepperoni, basil and mozzarella raining down. */
+const COLORS = ["#D2361F", "#0E8A5F", "#2F4FD0", "#F5B83D", "#FF8A6B"];
+
+/** Confetti in the house colors. */
 function Confetti({ burst }: { burst: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -17,7 +19,7 @@ function Confetti({ burst }: { burst: number }) {
     cv.width = innerWidth * dpr;
     cv.height = innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    type P = { x: number; y: number; vx: number; vy: number; r: number; a: number; va: number; kind: 0 | 1 | 2 };
+    type P = { x: number; y: number; vx: number; vy: number; r: number; a: number; va: number; kind: number };
     const ps: P[] = Array.from({ length: 140 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 200,
       y: innerHeight * 0.45,
@@ -26,7 +28,7 @@ function Confetti({ burst }: { burst: number }) {
       r: 7 + Math.random() * 9,
       a: Math.random() * 6,
       va: (Math.random() - 0.5) * 0.3,
-      kind: (Math.random() < 0.6 ? 0 : Math.random() < 0.5 ? 1 : 2) as 0 | 1 | 2,
+      kind: Math.floor(Math.random() * COLORS.length),
     }));
     let raf = 0;
     const t0 = performance.now();
@@ -41,33 +43,10 @@ function Confetti({ burst }: { burst: number }) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.a);
-        if (p.kind === 0) {
-          ctx.fillStyle = "#C8102E";
-          ctx.beginPath();
-          ctx.arc(0, 0, p.r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#8E0B20";
-          for (const [dx, dy] of [[-0.35, -0.2], [0.3, 0.25], [0.05, -0.45]]) {
-            ctx.beginPath();
-            ctx.arc(dx * p.r, dy * p.r, p.r * 0.14, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        } else if (p.kind === 1) {
-          ctx.fillStyle = "#1E8A3E";
-          ctx.beginPath();
-          ctx.ellipse(0, 0, p.r * 1.1, p.r * 0.5, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#0A3B24";
-          ctx.beginPath();
-          ctx.moveTo(-p.r, 0);
-          ctx.lineTo(p.r, 0);
-          ctx.stroke();
-        } else {
-          ctx.fillStyle = "#FFF6DA";
-          ctx.strokeStyle = "#E9D9A6";
-          ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r);
-          ctx.strokeRect(-p.r / 2, -p.r / 2, p.r, p.r);
-        }
+        ctx.fillStyle = COLORS[p.kind];
+        ctx.beginPath();
+        ctx.roundRect(-p.r / 2, -p.r / 4, p.r, p.r / 2, 2);
+        ctx.fill();
         ctx.restore();
       }
       if (now - t0 < 4000) raf = requestAnimationFrame(draw);
@@ -160,91 +139,80 @@ export function Effects() {
     <>
       <Confetti burst={s.confetti} />
 
-      {/* pager */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[80] grid w-[min(360px,calc(100vw-32px))] gap-2" aria-live="polite">
+      {/* toasts */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[80] grid w-[min(380px,calc(100vw-32px))] gap-2" aria-live="polite">
         <AnimatePresence>
           {s.pages.map((p) => (
             <motion.div
               key={p.id}
-              initial={{ y: 80, opacity: 0, rotate: 0 }}
-              animate={{ y: 0, opacity: 1, rotate: [0, -3, 3, -2, 2, 0] }}
-              exit={{ x: 400, opacity: 0 }}
-              transition={{ duration: 0.45 }}
-              className="pointer-events-auto rounded-xl border-[3px] border-black bg-[#2B3A2A] p-2 shadow-2xl"
+              initial={{ y: 40, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ x: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-grout bg-plate p-4 text-sm font-medium leading-snug text-ink shadow-xl"
             >
-              <div className="mb-1 flex items-center justify-between px-1">
-                <span className="label text-[10px] text-[#9FB38A]">SUPAH-PAGE 2000</span>
-                <span className={`h-2 w-2 rounded-full ${p.tone === "bad" ? "bg-dn" : p.tone === "good" ? "bg-up" : "bg-led"} animate-pulse`} />
-              </div>
-              <div className="rounded bg-[#9FB38A] px-2 py-1.5 font-led text-lg leading-tight text-[#1d2a16] shadow-[inset_0_2px_4px_rgba(0,0,0,.35)]">
-                *BEEP* 212-555-PIE
-                <br />
-                {p.text}
-              </div>
+              <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${p.tone === "bad" ? "bg-sauce" : p.tone === "good" ? "bg-basil" : "bg-cheese"}`} />
+              <span>{p.text}</span>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* rubber stamp */}
+      {/* big moment badge */}
       <AnimatePresence>
         {s.stamp && (
           <motion.div
             key={s.stamp.id}
-            className="pointer-events-none fixed inset-0 z-[75] grid place-items-center"
+            className="pointer-events-none fixed inset-0 z-[75] grid place-items-center bg-black/10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              initial={{ scale: 3.2, rotate: -24, opacity: 0 }}
-              animate={{ scale: 1, rotate: -9, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 420, damping: 16 }}
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 420, damping: 22 }}
               onAnimationComplete={() => fx.shake()}
-              className={`rounded-lg border-[10px] px-8 py-4 text-center font-slab ${
-                s.stamp.tone === "good" ? "border-basil bg-plate/90 text-basil" : "border-sauce bg-plate/90 text-sauce"
-              }`}
-              style={{ boxShadow: "0 20px 60px rgba(0,0,0,.35)" }}
+              className={`rounded-3xl border-4 bg-plate px-10 py-6 text-center shadow-2xl ${s.stamp.tone === "good" ? "border-basil text-basil" : "border-sauce text-sauce"}`}
             >
-              <div className="text-[clamp(48px,10vw,120px)] leading-none">{s.stamp.text}</div>
-              {s.stamp.sub && <div className="mt-2 font-led text-5xl">{s.stamp.sub}</div>}
+              <div className="font-slab text-[clamp(40px,8vw,88px)] leading-none">{s.stamp.text}</div>
+              {s.stamp.sub && <div className="mt-2 font-slab text-3xl text-ink">{s.stamp.sub}</div>}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* order ticket flying to the tab */}
+      {/* bet confirmation flying to your balance */}
       <AnimatePresence>
         {s.ticket && (
           <motion.div
             key={s.ticket.id}
-            className="guest-check pointer-events-none fixed left-1/2 top-1/2 z-[72] w-72 -translate-x-1/2 -translate-y-1/2"
-            initial={{ y: 300, rotate: 8, opacity: 0, scale: 0.8 }}
+            className="pointer-events-none fixed left-1/2 top-1/2 z-[72] w-72 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-grout bg-plate text-ink shadow-2xl"
+            initial={{ y: 200, opacity: 0, scale: 0.9 }}
             animate={{
-              y: [300, 0, 0, tabRect ? tabRect.top - innerHeight / 2 : -innerHeight / 2],
+              y: [200, 0, 0, tabRect ? tabRect.top - innerHeight / 2 : -innerHeight / 2],
               x: [0, 0, 0, tabRect ? tabRect.left + tabRect.width / 2 - innerWidth / 2 : innerWidth / 3],
-              rotate: [8, -3, -3, 25],
-              scale: [0.8, 1, 1, 0.15],
-              opacity: [0, 1, 1, 0.6],
+              scale: [0.9, 1, 1, 0.15],
+              opacity: [0, 1, 1, 0.5],
             }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.8, times: [0, 0.2, 0.6, 1], ease: "easeInOut" }}
           >
-            <div className="flex items-baseline justify-between bg-basil px-4 py-2 font-board uppercase tracking-widest text-check">
-              <b className="font-slab text-lg normal-case tracking-normal">Guest Check</b>
-              <span className="text-xs">ORDER UP!</span>
+            <div className="flex items-center justify-between border-b border-grout px-4 py-3">
+              <b className="font-slab">Bet placed</b>
+              <span className="h-2 w-2 rounded-full bg-basil" />
             </div>
-            <div className="grid gap-1 px-4 py-3 text-sm">
-              <div className="font-hand text-xl text-pen">{s.ticket.title}</div>
+            <div className="grid gap-1 px-4 py-3 text-sm tabular-nums">
+              <div className="mb-1 font-semibold">{s.ticket.title}</div>
               {s.ticket.lines.map(([a, b], i) => (
                 <div key={i} className="flex justify-between gap-2">
-                  <span>{a}</span>
-                  <span className="font-hand text-pen">{b}</span>
+                  <span className="text-ink-soft">{a}</span>
+                  <span>{b}</span>
                 </div>
               ))}
-              <div className="mt-1 flex justify-between border-t-2 border-check-line pt-1 font-slab">
+              <div className="mt-1 flex justify-between border-t border-grout pt-2 font-semibold">
                 <span>Total</span>
-                <span className="font-hand text-xl text-pen">{s.ticket.total}</span>
+                <span className="text-basil">{s.ticket.total}</span>
               </div>
             </div>
           </motion.div>
@@ -265,7 +233,7 @@ export function Effects() {
             <svg viewBox="60 20 260 320" className="h-60 w-auto" aria-hidden="true">
               <g transform="translate(58,34) rotate(-10)">
                 <path d="M 0,0 L 118,0 Q 124,0 124,6 L 124,44 Q 124,50 118,50 L 40,50 L 22,70 L 26,50 L 6,50 Q 0,50 0,44 Z" fill="#FFFFFF" stroke="#1D1A17" strokeWidth="4" />
-                <text x="62" y="36" textAnchor="middle" fontFamily="'Alfa Slab One', Georgia, serif" fontSize="26" fill="#C8102E">
+                <text x="62" y="36" textAnchor="middle" fontFamily="'Bricolage Grotesque', sans-serif" fontWeight="800" fontSize="26" fill="#C8102E">
                   AYYY!
                 </text>
               </g>

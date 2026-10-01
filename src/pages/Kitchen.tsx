@@ -33,8 +33,8 @@ export function Kitchen() {
   if (!data) {
     return (
       <div className="grid place-items-center gap-3 p-16">
-        <div className="h-16 w-16 animate-spin rounded-full border-8 border-cheese border-t-sauce" />
-        <p className="font-hand text-lg">Flourin' da counter…</p>
+        <div className="h-16 w-16 animate-spin rounded-full border-8 border-tile border-t-sauce" />
+        <p className="text-ink-soft">Loading the kitchen…</p>
       </div>
     );
   }
@@ -53,8 +53,8 @@ export function Kitchen() {
             {r.tosser.joint} · {r.tosser.bio}
           </p>
         </div>
-        <div className="led rounded px-3 py-1 text-xl">
-          {vol(r.volumeCents)} ON DIS PIE
+        <div className="led px-4 py-2 text-xl">
+          {vol(r.volumeCents)} on this round
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export function Kitchen() {
           <DoughStage round={r} clockOffset={clockOffset()} />
 
           <section className="grid gap-3">
-            <SectionHead title="Last Few Pies" aside="the scoreboard don't lie" />
+            <SectionHead title="Recent rounds" aside="the scoreboard don't lie" />
             <div className="flex gap-2 overflow-x-auto pb-2">
               {data.recent.map((x, i) => (
                 <motion.div
@@ -75,7 +75,7 @@ export function Kitchen() {
                 >
                   <span className="label truncate text-[10px] text-ink-soft">{x.nick}</span>
                   <span className="font-led text-5xl leading-none">{x.count}</span>
-                  <span className={`pill mx-auto ${x.over ? "bg-basil text-plate" : "bg-sauce text-plate"}`}>
+                  <span className={`pill mx-auto ${x.over ? "bg-basil text-white" : "bg-sauce text-white"}`}>
                     {x.over ? "Over" : "Under"} {x.line}
                   </span>
                   {x.floor && <span className="label text-[10px] text-sauce">Floor pie</span>}
@@ -103,7 +103,7 @@ export function Kitchen() {
           />
 
           <section className="plate grid gap-2 p-4">
-            <h2 className="font-slab text-lg">Da Line</h2>
+            <h2 className="font-slab text-lg">Recent bets</h2>
             {r.trades.length === 0 && <p className="font-hand text-sm text-ink-soft">Nobody's bet yet. Suspicious.</p>}
             {r.trades.slice(0, 8).map((t, i) => (
               <div key={i} className="flex justify-between gap-2 text-[13px] tabular-nums">

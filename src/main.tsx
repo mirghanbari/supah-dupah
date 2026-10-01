@@ -29,11 +29,11 @@ function Pages() {
     <AnimatePresence mode="wait">
       <motion.main
         key={loc.pathname}
-        initial={{ opacity: 0, y: 18, rotate: -0.4 }}
-        animate={{ opacity: 1, y: 0, rotate: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.22 }}
-        className="tiles min-h-[70vh] px-4 py-6 sm:py-8"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        className="min-h-[70vh] px-4 py-6 sm:px-6 sm:py-8"
       >
         <div className="mx-auto max-w-7xl">
           <Routes location={loc}>
