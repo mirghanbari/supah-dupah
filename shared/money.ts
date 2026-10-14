@@ -158,7 +158,7 @@ export function vetMoney(p: MoneyPick, date: string, quotes: Partial<Record<Asse
       rules: [
         ["Resolves YES", `${what} on ${day} ${date} is over ${money(asset, line)}.`],
         ["Resolves NO", `It's ${money(asset, line)} or under.`],
-        ["Source", A.source === "coinbase" ? "Coinbase's public price, the hourly bar that ends at 4:00pm." : "Alpha Vantage daily closing price."],
+        ["Source", A.source === "coinbase" ? "Coinbase's public price, the hourly bar that ends at 4:00pm (Kraken's, if Coinbase is down)." : "Alpha Vantage daily closing price."],
         ["Trading stops", "9:30am New York time, when the stock market opens."],
         ["Settled by", "The computer, automatic, after 6pm. Tony don't touch it."],
         ["Fine print", "Play money. Not investment advice. Tony has never once been right about the market."],

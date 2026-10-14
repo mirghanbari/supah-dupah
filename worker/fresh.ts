@@ -218,6 +218,13 @@ async function cookWeather(env: Env, now: number, trigger: FreshRun["trigger"]):
 
 // ---------- money: Alpha Vantage (stocks, funds) and Coinbase (crypto) ----------
 
+/** Thrown when the free key's 25 calls are used up, so callers stop trying the rest. */
+class AlphaLimit extends Error {
+  constructor() {
+    super("Alpha Vantage daily limit reached (25 calls)");
+  }
+}
+
 /** Daily closes, newest first, from the cache when it was fetched after `freshAfter`. */
 async function alphaCloses(env: Env, symbol: string, freshAfter: number): Promise<[string, number][]> {
   const hit = await env.DB.prepare("SELECT fetched_at, data FROM price_cache WHERE symbol = ?").bind(symbol).first<{ fetched_at: number; data: string }>();
@@ -230,7 +237,12 @@ async function alphaCloses(env: Env, symbol: string, freshAfter: number): Promis
   const res = await fetch(u);
   const body = (await res.json().catch(() => ({}))) as { "Time Series (Daily)"?: Record<string, Record<string, string>>; Information?: string; Note?: string; "Error Message"?: string };
   const series = body["Time Series (Daily)"];
-  if (!series) throw new Error(`Alpha Vantage ${symbol}: ${(body.Information ?? body.Note ?? body["Error Message"] ?? `HTTP ${res.status}`).slice(0, 160)}`);
+  if (!series) {
+    // their messages can quote the API key back, so never pass them along as-is
+    const msg = body.Information ?? body.Note ?? body["Error Message"] ?? "";
+    if (/rate limit|requests per day|premium/i.test(msg)) throw new AlphaLimit();
+    throw new Error(`Alpha Vantage ${symbol}: ${body["Error Message"] ? "unknown symbol" : `no data (HTTP ${res.status})`}`);
+  }
   const closes = Object.entries(series)
     .sort(([a], [b]) => (a < b ? 1 : -1))
     .slice(0, 10)
@@ -241,15 +253,30 @@ async function alphaCloses(env: Env, symbol: string, freshAfter: number): Promis
   return closes;
 }
 
-/** Coinbase hourly or daily bars: [time, low, high, open, close, volume], newest first. */
-async function coinbaseBars(symbol: string, granularity: number, start: number, end: number) {
-  const u = new URL(`https://api.exchange.coinbase.com/products/${symbol}/candles`);
-  u.searchParams.set("granularity", String(granularity));
-  u.searchParams.set("start", new Date(start).toISOString());
-  u.searchParams.set("end", new Date(end).toISOString());
-  const res = await fetch(u, { headers: { "user-agent": "supahdupah.com fresh markets" } });
-  if (!res.ok) throw new Error(`Coinbase ${symbol} ${res.status}`);
-  return (await res.json()) as number[][];
+/** Crypto bars as [startSeconds, close], newest first. Coinbase first (one retry), then Kraken. */
+async function cryptoBars(asset: AssetId, granularity: 3600 | 86_400, start: number, end: number): Promise<[number, number][]> {
+  const cb = new URL(`https://api.exchange.coinbase.com/products/${ASSETS[asset].symbol}/candles`);
+  cb.searchParams.set("granularity", String(granularity));
+  cb.searchParams.set("start", new Date(start).toISOString());
+  cb.searchParams.set("end", new Date(end).toISOString());
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await wait(1_500);
+    const res = await fetch(cb, { headers: { "user-agent": "supahdupah.com fresh markets" } }).catch(() => null);
+    if (res?.ok) return ((await res.json()) as number[][]).map((b) => [b[0], b[4]]);
+  }
+  // Kraken: [time, open, high, low, close, ...] oldest first, prices as strings
+  const kr = new URL("https://api.kraken.com/0/public/OHLC");
+  kr.searchParams.set("pair", asset === "btc" ? "XBTUSD" : "ETHUSD");
+  kr.searchParams.set("interval", String(granularity / 60));
+  kr.searchParams.set("since", String(Math.floor(start / 1000) - 1));
+  const res = await fetch(kr);
+  const body = (await res.json().catch(() => ({}))) as { error?: string[]; result?: Record<string, unknown> };
+  const bars = Object.values(body.result ?? {}).find(Array.isArray) as (string | number)[][] | undefined;
+  if (!bars) throw new Error(`no ${ASSETS[asset].ticker} price from Coinbase or Kraken`);
+  return bars
+    .filter((b) => Number(b[0]) * 1000 >= start && Number(b[0]) * 1000 < end)
+    .map((b) => [Number(b[0]), Number(b[4])] as [number, number])
+    .reverse();
 }
 
 /** Last completed close for every asset we can get. Missing ones are left out, with why. */
@@ -260,10 +287,11 @@ async function quotesFor(env: Env, now: number) {
   // a bar for today only counts once the market's closed
   const closedToday = !isTradingDay(today) || now >= nyTime(today, 16, 30);
   let calls = 0;
+  let limited = false;
   if (!env.ALPHAVANTAGE_API_KEY) problems.push("no Alpha Vantage key, so crypto only");
   for (const a of ASSET_IDS) {
     const A = ASSETS[a];
-    if (A.source === "alpha" && !env.ALPHAVANTAGE_API_KEY) continue;
+    if (A.source === "alpha" && (!env.ALPHAVANTAGE_API_KEY || limited)) continue;
     try {
       if (A.source === "alpha") {
         if (calls++) await wait(1_200); // the free key wants about a call a second
@@ -271,11 +299,12 @@ async function quotesFor(env: Env, now: number) {
         if (!closes.length) throw new Error(`${A.symbol}: no closes`);
         quotes[a] = { close: closes[0][1], date: closes[0][0], weekAgo: closes[5]?.[1] ?? null };
       } else {
-        const bars = await coinbaseBars(A.symbol, 86_400, now - 8 * DAY, now);
-        if (!bars.length) throw new Error(`${A.symbol}: no bars`);
-        quotes[a] = { close: bars[0][4], date: today, weekAgo: bars[7]?.[4] ?? null };
+        const bars = await cryptoBars(a, 86_400, now - 8 * DAY, now + HOUR);
+        if (!bars.length) throw new Error(`${A.ticker}: no bars`);
+        quotes[a] = { close: bars[0][1], date: today, weekAgo: bars[7]?.[1] ?? null };
       }
     } catch (e) {
+      if (e instanceof AlphaLimit) limited = true; // the rest would fail too; don't spend anything on them
       problems.push(String(e instanceof Error ? e.message : e).slice(0, 160));
     }
   }
@@ -358,6 +387,8 @@ export async function maybeFresh(env: Env, now: number) {
     const date = nextFor(now, kind);
     const prev = await env.DB.prepare("SELECT value FROM meta WHERE key = ?").bind(key).first<string>("value");
     if (prev === date) continue;
+    const waitUntil = await env.DB.prepare("SELECT value FROM meta WHERE key = ?").bind(`fresh_wait_${kind}`).first<string>("value");
+    if (now < Number(waitUntil ?? 0)) continue;
     const claimed = await env.DB.prepare("INSERT INTO meta (key, value) VALUES (?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?2 WHERE meta.value IS NOT ?2")
       .bind(key, date)
       .run();
@@ -365,9 +396,12 @@ export async function maybeFresh(env: Env, now: number) {
     try {
       await cookBatch(env, now, "daily", kind);
     } catch (e) {
-      // the data feed was down before anything was spent; let a later tick try again
+      // the data feed was down before anything was spent; try again in half an hour, not every minute
       console.error(`fresh ${kind} batch`, e);
-      await env.DB.prepare("UPDATE meta SET value = ? WHERE key = ?").bind(prev ?? "", key).run();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE meta SET value = ? WHERE key = ?").bind(prev ?? "", key),
+        env.DB.prepare("INSERT INTO meta (key, value) VALUES (?1, ?2) ON CONFLICT (key) DO UPDATE SET value = ?2").bind(`fresh_wait_${kind}`, String(now + 30 * 60_000)),
+      ]);
     }
   }
 }
@@ -419,8 +453,8 @@ export async function settleFresh(env: Env, now: number) {
         const closes = await alphaCloses(env, A.symbol, Math.max(group[0].a.settleAfter, now - HOUR));
         actual = closes.find(([d]) => d === date)?.[1];
       } else {
-        const bars = await coinbaseBars(A.symbol, 3600, nyTime(date, 15, 0), nyTime(date, 16, 0));
-        actual = bars.find((b) => b[0] * 1000 === nyTime(date, 15, 0))?.[4]; // the bar from 3 to 4pm closes at 4
+        const bars = await cryptoBars(asset, 3600, nyTime(date, 15, 0), nyTime(date, 16, 0) + 1);
+        actual = bars.find((b) => b[0] * 1000 === nyTime(date, 15, 0))?.[1]; // the bar from 3 to 4pm closes at 4
       }
       if (actual == null || !Number.isFinite(actual)) continue;
       for (const { m, a } of group) await settle(env, m, winnerFor(actual, a.threshold), { actual, line: a.threshold, asset });
