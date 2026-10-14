@@ -1,4 +1,4 @@
-export type Category = "truck" | "crust" | "hood" | "block" | "weather" | "toss";
+export type Category = "truck" | "crust" | "hood" | "block" | "weather" | "outside" | "money" | "toss";
 
 export const CATEGORY_LABEL: Record<Category, string> = {
   truck: "Fell Off the Truck",
@@ -6,6 +6,8 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   hood: "Neighborhood",
   block: "Block Association",
   weather: "Weather (Inside)",
+  outside: "Weather (Outside)",
+  money: "Wall Street (Allegedly)",
   toss: "Live Toss",
 };
 
@@ -33,6 +35,7 @@ export type MarketSummary = {
   closesAt: number | null;
   volumeCents: number;
   featured: boolean;
+  autoSettle: boolean; // fresh weather markets settle themselves
 };
 
 export type Trade = {
@@ -140,4 +143,34 @@ export type PickResult = {
 export type PickState = {
   recent: { user: string; pick: number; draw: number; betCents: number; payoutCents: number; at: number }[];
   mine: { plays: number; wins: number; closeCalls: number; netCents: number } | null;
+};
+
+/** One batch of fresh weather markets, as Tony sees it in the office. */
+export type FreshKind = "weather" | "money";
+
+export type FreshRun = {
+  at: number;
+  kind: FreshKind;
+  forDate: string;
+  trigger: "daily" | "tony";
+  writer: string; // model id, or "house" for the templates
+  made: number;
+  fromWriter: number;
+  rejected: string[];
+  inputTokens: number;
+  outputTokens: number;
+  costMicros: number;
+  error: string | null;
+  titles?: string[];
+};
+
+export type FreshReport = {
+  writer: string;
+  hasPrices: boolean; // Alpha Vantage key set
+  next: Record<FreshKind, string>;
+  hours: Record<FreshKind, number>;
+  perDay: Record<FreshKind, number>;
+  openOnBoard: number;
+  last30: { runs: number; micros: number; made: number };
+  runs: FreshRun[];
 };

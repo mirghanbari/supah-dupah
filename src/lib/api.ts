@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { shopNow, syncClock } from "./clock";
-import type { KitchenState, LeaderRow, MarketDetail, MarketSummary, Me, PickResult, PickState, Standing, TabState, TickerItem, VanPosition, VanRow } from "../../shared/types";
+import type { FreshKind, FreshReport, FreshRun, KitchenState, LeaderRow, MarketDetail, MarketSummary, Me, PickResult, PickState, Standing, TabState, TickerItem, VanPosition, VanRow } from "../../shared/types";
 
 export class ApiError extends Error {
   constructor(
@@ -51,6 +51,8 @@ export const api = {
   ticker: () => call<{ items: TickerItem[] }>("/ticker"),
   bossCreate: (b: { title: string; blurb: string; category: string; outcomes: string[]; days: number }) => call<{ slug: string }>("/boss/markets", b),
   bossResolve: (slug: string, winner: number) => call<{ ok: true }>(`/boss/markets/${slug}/resolve`, { winner }),
+  bossFresh: () => call<FreshReport>("/boss/fresh"),
+  bossFreshRun: (kind: FreshKind) => call<FreshRun>("/boss/fresh/run", { kind }),
 };
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: api.me, refetchInterval: 8_000 }).data?.user ?? null;

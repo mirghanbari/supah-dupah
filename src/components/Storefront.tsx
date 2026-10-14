@@ -24,6 +24,8 @@ const SECTIONS = [
   { to: "/section/hood", label: "Neighborhood" },
   { to: "/section/block", label: "Block Association" },
   { to: "/section/weather", label: "Weather (Inside)" },
+  { to: "/section/outside", label: "Weather (Outside)" },
+  { to: "/section/money", label: "Wall Street (Allegedly)" },
 ];
 
 function useSound() {

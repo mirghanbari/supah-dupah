@@ -15,6 +15,7 @@
     "voice": "node scripts/tony-voice.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
     "@tanstack/react-query": "^5.104.0",
     "hono": "^4.13.12",
     "motion": "^13.4.6",

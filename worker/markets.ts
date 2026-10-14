@@ -42,6 +42,7 @@ export function summarize(m: MarketRow, before?: number[]): MarketSummary {
     closesAt: m.closes_at,
     volumeCents: m.volume_cents,
     featured: !!m.featured,
+    autoSettle: m.auto != null,
   };
 }
 

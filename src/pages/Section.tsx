@@ -10,6 +10,8 @@ const ASIDE: Partial<Record<Category, string>> = {
   hood: "stuff nobody asked anybody to predict",
   block: "democracy, stoop-style",
   weather: "the only forecast that matters: inside da shop",
+  outside: "real sky, real numbers. fresh every morning, settled by the computer",
+  money: "real prices, fake money. not advice. Tony has never been right about the market",
 };
 
 export function Section() {

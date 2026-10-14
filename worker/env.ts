@@ -4,6 +4,10 @@ export type Env = {
   TOSS_SECRET: string;
   /** Secret code. Whoever types it into "Who sent you?" at sign-up becomes Tony (admin). */
   BOSS_CODE?: string;
+  /** Claude writes the daily fresh markets when this is set; without it the house templates do. */
+  ANTHROPIC_API_KEY?: string;
+  /** Stock and fund prices for the money markets (free key, 25 calls a day). */
+  ALPHAVANTAGE_API_KEY?: string;
 };
 
 export type UserRow = {
@@ -37,6 +41,7 @@ export type MarketRow = {
   created_at: number;
   resolved_at: number | null;
   result: string | null;
+  auto: string | null; // fresh markets: JSON settlement spec
 };
 
 export class HttpError extends Error {

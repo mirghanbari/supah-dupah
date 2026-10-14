@@ -126,14 +126,19 @@ function VanTile() {
   );
 }
 
-const CATS: (Category | "all")[] = ["all", "truck", "crust", "hood", "block", "weather"];
+const CATS: (Category | "all")[] = ["all", "money", "outside", "truck", "crust", "hood", "block", "weather"];
 
 export function Lobby() {
   const me = useMe();
   const { data } = useMarkets();
   const [cat, setCat] = useState<Category | "all">("all");
   const markets = data?.markets ?? [];
-  const feat = markets.find((m) => m.featured && m.outcomes.length === 2) ?? markets[0];
+  // the spotlight goes to the busiest Wall Street bet still taking orders, else the old featured pick
+  const now = Date.now();
+  const feat =
+    markets.find((m) => m.category === "money" && (m.closesAt == null || m.closesAt > now)) ??
+    markets.find((m) => m.featured && m.outcomes.length === 2) ??
+    markets[0];
   // the featured market already has the spotlight up top, so "All" skips it
   const shown = cat === "all" ? markets.filter((m) => m !== feat) : markets.filter((m) => m.category === cat);
 

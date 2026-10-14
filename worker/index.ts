@@ -17,6 +17,7 @@ import {
 } from "./auth";
 import { maybeTick, tick } from "./bots";
 import { HttpError, type AppEnv, type Env, type MarketRow, type UserRow } from "./env";
+import { cookBatch, freshReport, maybeFresh, settleFresh } from "./fresh";
 import { kitchenState, standings } from "./kitchen";
 import { addComment, buy, getMarket, listMarkets, marketDetail, sell, settle } from "./markets";
 import { pickState, playPick } from "./pick";
@@ -340,13 +341,37 @@ app.post("/boss/markets/:slug/resolve", async (c) => {
   return c.json({ ok: true });
 });
 
+app.get("/boss/fresh", async (c) => {
+  requireBoss(c.get("user"));
+  return c.json(await freshReport(c.env, Date.now()));
+});
+
+app.post("/boss/fresh/run", async (c) => {
+  requireBoss(c.get("user"));
+  const kind = (await body<{ kind?: string }>(c)).kind === "money" ? "money" : "weather";
+  try {
+    return c.json(await cookBatch(c.env, Date.now(), "tony", kind));
+  } catch (e) {
+    console.error("fresh batch", e);
+    throw new HttpError(409, kind === "money" ? "Couldn't get any prices. Try again in a minute." : "Couldn't get the forecast. Try again in a minute.");
+  }
+});
+
 export default {
   fetch: app.fetch,
   async scheduled(_event, env, ctx) {
+    const now = Date.now();
     ctx.waitUntil(
       (async () => {
         await ensureSeeded(env);
-        await tick(env, Date.now());
+        await tick(env, now);
+      })(),
+    );
+    // fresh markets: settle what's due first, so the evening money batch reuses the same price fetch
+    ctx.waitUntil(
+      (async () => {
+        await settleFresh(env, now).catch((e) => console.error("settle fresh", e));
+        await maybeFresh(env, now).catch((e) => console.error("fresh", e));
       })(),
     );
   },
