@@ -71,6 +71,8 @@ describe("money markets: the house writer", () => {
 
   it("still makes picks with only crypto prices", () => {
     const only = { btc: quotes.btc, eth: quotes.eth };
-    expect(moneyHouseWriter(DATE, only, MONEY_PER_DAY, new Set())).toHaveLength(4);
+    const { taken, perAsset } = fresh();
+    const passed = moneyHouseWriter(DATE, only, MONEY_PER_DAY * 3, new Set()).filter((p) => vetMoney(p, DATE, only, taken, perAsset).ok);
+    expect(passed).toHaveLength(4); // two each, the most allowed
   });
 });

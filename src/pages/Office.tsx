@@ -193,7 +193,12 @@ function FreshPanel() {
       )}
       {data && !data.hasPrices && (
         <p className="rounded-2xl bg-cheese-soft px-4 py-3 text-sm">
-          No Alpha Vantage key, so the money batch only has crypto. Add <code className="font-mono">ALPHAVANTAGE_API_KEY</code> for the stocks and funds.
+          No stock price keys, so the money batch only has crypto. Add <code className="font-mono">ALPHAVANTAGE_API_KEY</code> for the stocks and funds.
+        </p>
+      )}
+      {data?.hasPrices && !data.hasBackup && (
+        <p className="rounded-2xl bg-cheese-soft px-4 py-3 text-sm">
+          Only one stock price source. Add <code className="font-mono">TWELVEDATA_API_KEY</code> as a backup for when Alpha Vantage runs out of calls.
         </p>
       )}
       {err && <p className="text-sm font-semibold text-sauce">{err}</p>}

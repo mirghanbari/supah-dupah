@@ -8,6 +8,8 @@ export type Env = {
   ANTHROPIC_API_KEY?: string;
   /** Stock and fund prices for the money markets (free key, 25 calls a day). */
   ALPHAVANTAGE_API_KEY?: string;
+  /** Backup for stock prices when Alpha Vantage can't deliver (free key, 8 calls a minute). */
+  TWELVEDATA_API_KEY?: string;
 };
 
 export type UserRow = {

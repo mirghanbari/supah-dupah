@@ -187,12 +187,13 @@ export function moneyHouseWriter(date: string, quotes: Partial<Record<AssetId, Q
   const seed = [...date].reduce((s, c) => (s * 31 + c.charCodeAt(0)) >>> 0, 7);
   const assets = ASSET_IDS.filter((a) => quotes[a]).sort((a, b) => ((seed ^ hash(a)) % 101) - ((seed ^ hash(b)) % 101));
   const out: MoneyPick[] = [];
-  for (const nudge of [0, 0.75]) {
+  // first the last close itself, then lines further out (in normal daily moves), alternating sides
+  for (const nudge of [0, 0.75, -0.75, 1.5, -1.5]) {
     for (const asset of assets) {
       if (out.length >= n) return out;
       const q = quotes[asset]!;
       const A = ASSETS[asset];
-      const line = roundLine(asset, q.close * (1 + (nudge ? ((hash(asset) + seed) % 2 ? nudge : -nudge) * A.vol : 0)));
+      const line = roundLine(asset, q.close * (1 + ((hash(asset) + seed) % 2 ? nudge : -nudge) * A.vol));
       if (taken.has(`${asset}|${line}`) || out.some((p) => p.asset === asset && p.threshold === line)) continue;
       const set = TEMPLATES[A.source];
       const [t, b] = set[(hash(asset) + seed + out.length) % set.length];

@@ -166,7 +166,8 @@ export type FreshRun = {
 
 export type FreshReport = {
   writer: string;
-  hasPrices: boolean; // Alpha Vantage key set
+  hasPrices: boolean; // a stock price key is set
+  hasBackup: boolean; // both Alpha Vantage and Twelve Data
   next: Record<FreshKind, string>;
   hours: Record<FreshKind, number>;
   perDay: Record<FreshKind, number>;

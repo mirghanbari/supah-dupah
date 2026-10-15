@@ -207,8 +207,9 @@ async function cookWeather(env: Env, now: number, trigger: FreshRun["trigger"]):
     else rejected.push(v.why);
   }
   const fromWriter = writer === "house" ? 0 : made.length;
-  // top up with the house templates so the board always gets its share
-  for (const p of houseWriter(date, forecasts, FRESH_PER_DAY - made.length, taken)) {
+  // top up with the house templates so the board always gets its share (ask for extra; some may clash)
+  for (const p of houseWriter(date, forecasts, FRESH_PER_DAY * 3, taken)) {
+    if (made.length >= FRESH_PER_DAY) break;
     const v = vet(p, date, forecasts, taken, perSpot);
     if (v.ok) made.push(v.market);
   }
@@ -216,24 +217,22 @@ async function cookWeather(env: Env, now: number, trigger: FreshRun["trigger"]):
   return openAndLog(env, now, "weather", trigger, date, writer, asked, markets, fromWriter, rejected, "outside");
 }
 
-// ---------- money: Alpha Vantage (stocks, funds) and Coinbase (crypto) ----------
+// ---------- money: stocks and funds (Alpha Vantage, then Twelve Data), crypto (Coinbase, then Kraken) ----------
 
-/** Thrown when the free key's 25 calls are used up, so callers stop trying the rest. */
+/** Thrown when the free key's 25 calls are used up, so callers stop trying it for the rest of the pass. */
 class AlphaLimit extends Error {
   constructor() {
     super("Alpha Vantage daily limit reached (25 calls)");
   }
 }
 
-/** Daily closes, newest first, from the cache when it was fetched after `freshAfter`. */
-async function alphaCloses(env: Env, symbol: string, freshAfter: number): Promise<[string, number][]> {
-  const hit = await env.DB.prepare("SELECT fetched_at, data FROM price_cache WHERE symbol = ?").bind(symbol).first<{ fetched_at: number; data: string }>();
-  if (hit && hit.fetched_at >= freshAfter) return Object.entries(JSON.parse(hit.data));
-  if (!env.ALPHAVANTAGE_API_KEY) throw new Error("no Alpha Vantage key");
+type Closes = [string, number][]; // [YYYY-MM-DD, close], newest first
+
+async function fromAlpha(key: string, symbol: string): Promise<Closes> {
   const u = new URL("https://www.alphavantage.co/query");
   u.searchParams.set("function", "TIME_SERIES_DAILY");
   u.searchParams.set("symbol", symbol);
-  u.searchParams.set("apikey", env.ALPHAVANTAGE_API_KEY);
+  u.searchParams.set("apikey", key);
   const res = await fetch(u);
   const body = (await res.json().catch(() => ({}))) as { "Time Series (Daily)"?: Record<string, Record<string, string>>; Information?: string; Note?: string; "Error Message"?: string };
   const series = body["Time Series (Daily)"];
@@ -243,14 +242,62 @@ async function alphaCloses(env: Env, symbol: string, freshAfter: number): Promis
     if (/rate limit|requests per day|premium/i.test(msg)) throw new AlphaLimit();
     throw new Error(`Alpha Vantage ${symbol}: ${body["Error Message"] ? "unknown symbol" : `no data (HTTP ${res.status})`}`);
   }
-  const closes = Object.entries(series)
+  return Object.entries(series)
     .sort(([a], [b]) => (a < b ? 1 : -1))
     .slice(0, 10)
-    .map(([d, bar]) => [d, Number(bar["4. close"])] as [string, number]);
-  await env.DB.prepare("INSERT INTO price_cache (symbol, fetched_at, data) VALUES (?1, ?2, ?3) ON CONFLICT (symbol) DO UPDATE SET fetched_at = ?2, data = ?3")
-    .bind(symbol, Date.now(), JSON.stringify(Object.fromEntries(closes)))
-    .run();
-  return closes;
+    .map(([d, bar]) => [d, Number(bar["4. close"])]);
+}
+
+async function fromTwelve(key: string, symbol: string): Promise<Closes> {
+  const u = new URL("https://api.twelvedata.com/time_series");
+  u.searchParams.set("symbol", symbol);
+  u.searchParams.set("interval", "1day");
+  u.searchParams.set("outputsize", "10");
+  u.searchParams.set("apikey", key);
+  const res = await fetch(u);
+  const body = (await res.json().catch(() => ({}))) as { values?: { datetime: string; close: string }[]; code?: number };
+  // newest first already; error messages are dropped for the same reason as Alpha's
+  if (!body.values?.length) throw new Error(`Twelve Data ${symbol}: no data (${body.code ?? res.status})`);
+  return body.values.map((v) => [v.datetime.slice(0, 10), Math.round(Number(v.close) * 100) / 100]); // they send 769.59998
+}
+
+/**
+ * Stock and fund closes for one batch or settle pass: the cache if it's fresh enough,
+ * then Alpha Vantage, then Twelve Data for anything Alpha can't deliver.
+ * Spaces calls out the way each free plan asks. `problems` collects what went wrong, once each.
+ */
+function stockFeed(env: Env) {
+  let alphaOut = !env.ALPHAVANTAGE_API_KEY;
+  let alphaCalls = 0;
+  let twelveCalls = 0;
+  const problems = new Set<string>();
+  const note = (e: unknown) => problems.add(String(e instanceof Error ? e.message : e).slice(0, 160));
+  if (!env.ALPHAVANTAGE_API_KEY && !env.TWELVEDATA_API_KEY) problems.add("no stock price keys, so crypto only");
+
+  async function closes(symbol: string, freshAfter: number): Promise<Closes> {
+    const hit = await env.DB.prepare("SELECT fetched_at, data FROM price_cache WHERE symbol = ?").bind(symbol).first<{ fetched_at: number; data: string }>();
+    if (hit && hit.fetched_at >= freshAfter) return Object.entries(JSON.parse(hit.data));
+    let got: Closes | null = null;
+    if (!alphaOut) {
+      if (alphaCalls++) await wait(1_200); // about a call a second
+      try {
+        got = await fromAlpha(env.ALPHAVANTAGE_API_KEY!, symbol);
+      } catch (e) {
+        if (e instanceof AlphaLimit) alphaOut = true; // the rest would fail too; don't spend anything on them
+        note(e);
+      }
+    }
+    if (!got && env.TWELVEDATA_API_KEY) {
+      if (twelveCalls++) await wait(8_000); // the free plan allows 8 a minute
+      got = await fromTwelve(env.TWELVEDATA_API_KEY, symbol);
+    }
+    if (!got) throw new Error(`no price for ${symbol}`);
+    await env.DB.prepare("INSERT INTO price_cache (symbol, fetched_at, data) VALUES (?1, ?2, ?3) ON CONFLICT (symbol) DO UPDATE SET fetched_at = ?2, data = ?3")
+      .bind(symbol, Date.now(), JSON.stringify(Object.fromEntries(got)))
+      .run();
+    return got;
+  }
+  return { closes, problems, note, canTry: () => !alphaOut || !!env.TWELVEDATA_API_KEY };
 }
 
 /** Crypto bars as [startSeconds, close], newest first. Coinbase first (one retry), then Kraken. */
@@ -283,19 +330,15 @@ async function cryptoBars(asset: AssetId, granularity: 3600 | 86_400, start: num
 async function quotesFor(env: Env, now: number) {
   const { date: today } = nyParts(now);
   const quotes: Partial<Record<AssetId, Quote>> = {};
-  const problems: string[] = [];
   // a bar for today only counts once the market's closed
   const closedToday = !isTradingDay(today) || now >= nyTime(today, 16, 30);
-  let calls = 0;
-  let limited = false;
-  if (!env.ALPHAVANTAGE_API_KEY) problems.push("no Alpha Vantage key, so crypto only");
+  const feed = stockFeed(env);
   for (const a of ASSET_IDS) {
     const A = ASSETS[a];
-    if (A.source === "alpha" && (!env.ALPHAVANTAGE_API_KEY || limited)) continue;
+    if (A.source === "alpha" && !feed.canTry()) continue;
     try {
       if (A.source === "alpha") {
-        if (calls++) await wait(1_200); // the free key wants about a call a second
-        const closes = (await alphaCloses(env, A.symbol, now - 2 * HOUR)).filter(([d]) => closedToday || d < today);
+        const closes = (await feed.closes(A.symbol, now - 2 * HOUR)).filter(([d]) => closedToday || d < today);
         if (!closes.length) throw new Error(`${A.symbol}: no closes`);
         quotes[a] = { close: closes[0][1], date: closes[0][0], weekAgo: closes[5]?.[1] ?? null };
       } else {
@@ -304,11 +347,10 @@ async function quotesFor(env: Env, now: number) {
         quotes[a] = { close: bars[0][1], date: today, weekAgo: bars[7]?.[1] ?? null };
       }
     } catch (e) {
-      if (e instanceof AlphaLimit) limited = true; // the rest would fail too; don't spend anything on them
-      problems.push(String(e instanceof Error ? e.message : e).slice(0, 160));
+      feed.note(e);
     }
   }
-  return { quotes, problems };
+  return { quotes, problems: [...feed.problems] };
 }
 
 const MONEY_SYSTEM = `${VOICE}
@@ -362,13 +404,15 @@ async function cookMoney(env: Env, now: number, trigger: FreshRun["trigger"]): P
     else rejected.push(v.why);
   }
   const fromWriter = writer === "house" ? 0 : made.length;
-  for (const p of moneyHouseWriter(date, quotes, MONEY_PER_DAY - made.length, taken)) {
+  for (const p of moneyHouseWriter(date, quotes, MONEY_PER_DAY * 3, taken)) {
+    if (made.length >= MONEY_PER_DAY) break;
     const v = vetMoney(p, date, quotes, taken, perAsset);
     if (v.ok) made.push(v.market);
   }
   const markets = made.map((m) => ({ ...m, auto: { kind: "money", asset: m.asset, date: m.date, threshold: m.threshold, settleAfter: m.settleAfter } }));
   // a missing price is worth knowing about even when the batch went fine
-  const note = problems.length ? `missing prices: ${problems.join("; ")}` : null;
+  const missing = ASSET_IDS.filter((a) => !quotes[a]).map((a) => ASSETS[a].ticker);
+  const note = problems.length ? `${missing.length ? `no price for ${missing.join(", ")}` : "all prices in"} · ${problems.join("; ")}` : null;
   return openAndLog(env, now, "money", trigger, date, writer, { ...asked, error: [asked.error, note].filter(Boolean).join(" · ") || null }, markets, fromWriter, rejected, "money");
 }
 
@@ -441,16 +485,15 @@ export async function settleFresh(env: Env, now: number) {
   // money, one price lookup per asset and day
   const money = new Map<string, { m: MarketRow; a: Extract<Auto, { kind: "money" }> }[]>();
   for (const x of list) if (x.a.kind === "money") money.set(`${x.a.asset}|${x.a.date}`, [...(money.get(`${x.a.asset}|${x.a.date}`) ?? []), x as { m: MarketRow; a: Extract<Auto, { kind: "money" }> }]);
-  let calls = 0;
+  const feed = stockFeed(env);
   for (const [key, group] of money) {
     const [asset, date] = key.split("|") as [AssetId, string];
     const A = ASSETS[asset];
     try {
       let actual: number | undefined;
       if (A.source === "alpha") {
-        if (calls++) await wait(1_200);
         // refetch at most hourly while waiting for the close to show up
-        const closes = await alphaCloses(env, A.symbol, Math.max(group[0].a.settleAfter, now - HOUR));
+        const closes = await feed.closes(A.symbol, Math.max(group[0].a.settleAfter, now - HOUR));
         actual = closes.find(([d]) => d === date)?.[1];
       } else {
         const bars = await cryptoBars(asset, 3600, nyTime(date, 15, 0), nyTime(date, 16, 0) + 1);
@@ -477,7 +520,8 @@ export async function freshReport(env: Env, now: number): Promise<FreshReport> {
   const board = await env.DB.prepare("SELECT COUNT(*) AS n FROM markets WHERE auto IS NOT NULL AND status = 'open'").first<number>("n");
   return {
     writer: env.ANTHROPIC_API_KEY ? WRITER_MODEL : "house",
-    hasPrices: !!env.ALPHAVANTAGE_API_KEY,
+    hasPrices: !!(env.ALPHAVANTAGE_API_KEY || env.TWELVEDATA_API_KEY),
+    hasBackup: !!(env.ALPHAVANTAGE_API_KEY && env.TWELVEDATA_API_KEY),
     next: { weather: nextFor(now, "weather"), money: nextFor(now, "money") },
     hours: { weather: WEATHER_HOUR, money: MONEY_HOUR },
     perDay: { weather: FRESH_PER_DAY, money: MONEY_PER_DAY },
